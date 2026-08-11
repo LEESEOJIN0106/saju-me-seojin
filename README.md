@@ -1,16 +1,22 @@
-# React + Vite
+# 사주 미
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+이름과 출생 정보만 천천히 채워 보세요.  
+사주 보는 첫걸음을 가볍게 도와주는 웹 앱입니다.
 
-Currently, two official plugins are available:
+## 무엇을 하나요?
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+생년월일, 태어난 시간, 성별, 양력·음력을 입력하면  
+사주 풀이에 필요한 기본 정보를 한곳에 모아 둡니다.
 
-## React Compiler
+- 이름
+- 양력 / 음력
+- 생년월일 (년·월·일)
+- 태어난 시간 (모를 때도 OK)
+- 성별
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+입력한 내용은 미리보기로 바로 확인할 수 있어요.
 
-## Expanding the Oxlint configuration
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## 기술
+
+React + Vite로 만든 프론트엔드 프로젝트입니다.
