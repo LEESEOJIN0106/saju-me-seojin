@@ -1,6 +1,91 @@
-import { useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { interpretBasicChart } from './lib/gemini'
+import { SAMPLE_BASIC_CHART } from './lib/sajuPrompt'
 import './App.css'
+
+const PILLAR_ORDER = [
+  { key: 'year', label: '년주' },
+  { key: 'month', label: '월주' },
+  { key: 'day', label: '일주' },
+  { key: 'hour', label: '시주' },
+]
+
+const STEM_ELEMENT = {
+  갑: 'wood',
+  을: 'wood',
+  병: 'fire',
+  정: 'fire',
+  무: 'earth',
+  기: 'earth',
+  경: 'metal',
+  신: 'metal',
+  임: 'water',
+  계: 'water',
+}
+
+const BRANCH_ELEMENT = {
+  자: 'water',
+  축: 'earth',
+  인: 'wood',
+  묘: 'wood',
+  진: 'earth',
+  사: 'fire',
+  오: 'fire',
+  미: 'earth',
+  신: 'metal',
+  유: 'metal',
+  술: 'earth',
+  해: 'water',
+}
+
+const ELEMENT_LABEL = {
+  wood: '목',
+  fire: '화',
+  earth: '토',
+  metal: '금',
+  water: '수',
+}
+
+function getCharElement(char, kind) {
+  const map = kind === 'stem' ? STEM_ELEMENT : BRANCH_ELEMENT
+  return map[char] ?? null
+}
+
+function PillarChar({ char, kind }) {
+  const element = getCharElement(char, kind)
+  return (
+    <div className="pillar-char">
+      {char}
+      {element ? (
+        <span className={`badge badge--${element}`}>{ELEMENT_LABEL[element]}</span>
+      ) : null}
+    </div>
+  )
+}
+
+const PillarGrid = memo(function PillarGrid({ chart = SAMPLE_BASIC_CHART }) {
+  return (
+    <div className="pillar-grid" aria-label="사주 네 기둥">
+      {PILLAR_ORDER.map(({ key, label }, index) => {
+        const pillar = chart.pillars[key] ?? ''
+        const stem = pillar[0] ?? ''
+        const branch = pillar[1] ?? ''
+        return (
+          <div
+            key={key}
+            className={`pillar-card pillar-card--${index + 1}`}
+          >
+            <span className="pillar-label">{label}</span>
+            <div className="pillar-chars">
+              <PillarChar char={stem} kind="stem" />
+              <PillarChar char={branch} kind="branch" />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+})
 
 // 올해 기준 유효 연도 범위
 const CURRENT_YEAR = new Date().getFullYear()
@@ -160,16 +245,17 @@ function parseInterpretation(text) {
       else currentSection.items.push(para)
     } else if (blocks.length === 0) {
       blocks.push({ type: 'intro', content: line })
-    } else if (
-      blocks.length === 1 &&
-      blocks[0].type === 'intro' &&
-      extractKeywords(line).length >= 2
-    ) {
-      blocks.push({
-        type: 'keywords',
-        content: line,
-        keywords: extractKeywords(line),
-      })
+    } else if (blocks.length === 1 && blocks[0].type === 'intro') {
+      const keywords = extractKeywords(line)
+      if (keywords.length >= 2) {
+        blocks.push({
+          type: 'keywords',
+          content: line,
+          keywords,
+        })
+        continue
+      }
+      blocks.push(para)
     } else {
       blocks.push(para)
     }
@@ -201,8 +287,8 @@ function HighlightText({ text }) {
   })
 }
 
-function InterpretationBody({ text }) {
-  const blocks = parseInterpretation(text)
+const InterpretationBody = memo(function InterpretationBody({ text }) {
+  const blocks = useMemo(() => parseInterpretation(text), [text])
 
   return (
     <div className="interp-body">
@@ -302,7 +388,30 @@ function InterpretationBody({ text }) {
       })}
     </div>
   )
-}
+})
+
+const ResultPanel = memo(function ResultPanel({ interpretation }) {
+  return (
+    <article className="result" aria-live="polite">
+      <div className="result-summary">
+        <h2>기본 차트 해석</h2>
+        <p>사주 명식을 바탕으로 성격·기질·재능의 흐름을 읽습니다.</p>
+      </div>
+
+      <PillarGrid chart={SAMPLE_BASIC_CHART} />
+
+      <div className="result-text-card">
+        <header className="result-text-head">
+          <h2>해석</h2>
+          <span className="result-text-badge" aria-hidden="true">
+            解
+          </span>
+        </header>
+        <InterpretationBody text={interpretation} />
+      </div>
+    </article>
+  )
+})
 
 function InterpretationItem({ item, standalone = false }) {
   if (item.type === 'special') {
@@ -677,79 +786,7 @@ function App() {
         </p>
       ) : null}
 
-      {interpretation ? (
-        <article className="result" aria-live="polite">
-          <div className="result-summary">
-            <h2>기본 차트 해석</h2>
-            <p>사주 명식을 바탕으로 성격·기질·재능의 흐름을 읽습니다.</p>
-          </div>
-
-          <div className="pillar-grid" aria-label="사주 네 기둥">
-            <div className="pillar-card pillar-card--1">
-              <span className="pillar-label">년주</span>
-              <div className="pillar-chars">
-                <div className="pillar-char">
-                  기
-                  <span className="badge badge--earth">토</span>
-                </div>
-                <div className="pillar-char">
-                  묘
-                  <span className="badge badge--wood">목</span>
-                </div>
-              </div>
-            </div>
-            <div className="pillar-card pillar-card--2">
-              <span className="pillar-label">월주</span>
-              <div className="pillar-chars">
-                <div className="pillar-char">
-                  기
-                  <span className="badge badge--earth">토</span>
-                </div>
-                <div className="pillar-char">
-                  사
-                  <span className="badge badge--fire">화</span>
-                </div>
-              </div>
-            </div>
-            <div className="pillar-card pillar-card--3">
-              <span className="pillar-label">일주</span>
-              <div className="pillar-chars">
-                <div className="pillar-char">
-                  을
-                  <span className="badge badge--wood">목</span>
-                </div>
-                <div className="pillar-char">
-                  축
-                  <span className="badge badge--earth">토</span>
-                </div>
-              </div>
-            </div>
-            <div className="pillar-card pillar-card--4">
-              <span className="pillar-label">시주</span>
-              <div className="pillar-chars">
-                <div className="pillar-char">
-                  을
-                  <span className="badge badge--wood">목</span>
-                </div>
-                <div className="pillar-char">
-                  유
-                  <span className="badge badge--metal">금</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="result-text-card">
-            <header className="result-text-head">
-              <h2>해석</h2>
-              <span className="result-text-badge" aria-hidden="true">
-                解
-              </span>
-            </header>
-            <InterpretationBody text={interpretation} />
-          </div>
-        </article>
-      ) : null}
+      {interpretation ? <ResultPanel interpretation={interpretation} /> : null}
     </div>
   )
 }
