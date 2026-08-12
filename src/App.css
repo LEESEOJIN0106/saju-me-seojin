@@ -948,6 +948,133 @@ body::after {
   text-align: center;
 }
 
+/* —— Share type card —— */
+.share-card {
+  position: relative;
+  overflow: hidden;
+  padding: 1.35rem 1.2rem 1.2rem;
+  border-radius: calc(var(--radius) + 0.15rem);
+  background:
+    linear-gradient(160deg, #1a1428 0%, #141824 42%, #0c1018 100%);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow:
+    var(--shadow-lift),
+    0 0 56px rgba(212, 175, 55, 0.16);
+  color: #f8f4ea;
+  animation: share-card-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.share-card-glow {
+  position: absolute;
+  inset: -40% -20% auto;
+  height: 70%;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(212, 175, 55, 0.28) 0%, transparent 55%),
+    radial-gradient(circle at 80% 20%, rgba(120, 90, 200, 0.18) 0%, transparent 45%);
+  pointer-events: none;
+  animation: share-glow 5s ease-in-out infinite alternate;
+}
+
+.share-card-eyebrow {
+  position: relative;
+  margin: 0 0 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(240, 208, 96, 0.85);
+}
+
+.share-card-type {
+  position: relative;
+  margin: 0 0 0.55rem;
+  font-family: 'Noto Serif KR', serif;
+  font-size: clamp(1.65rem, 6vw, 2.05rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, #fff8e8 10%, var(--accent-bright) 55%, #e8d4a0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: type-shine 4.5s ease-in-out infinite;
+}
+
+.share-card-line {
+  position: relative;
+  margin: 0 0 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(248, 244, 234, 0.88);
+}
+
+.share-card-tags {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1.05rem;
+  padding: 0;
+  list-style: none;
+}
+
+.share-card-tags li {
+  padding: 0.32rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  background: rgba(255, 252, 247, 0.06);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(240, 208, 96, 0.95);
+  animation: tag-pop 0.45s ease both;
+}
+
+.share-card-tags li:nth-child(2) { animation-delay: 0.06s; }
+.share-card-tags li:nth-child(3) { animation-delay: 0.12s; }
+.share-card-tags li:nth-child(4) { animation-delay: 0.18s; }
+
+.share-card-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.share-card-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(243, 239, 230, 0.72);
+}
+
+.share-btn {
+  flex: 0 0 auto;
+  padding: 0.55rem 0.95rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--accent) 0%, var(--accent-bright) 100%);
+  color: #1a1420;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.28);
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+
+.share-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.share-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
 /* —— 결과 영역 —— */
 .result {
   display: flex;
@@ -1528,6 +1655,38 @@ body::after {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes share-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes share-glow {
+  from { transform: translateY(0) scale(1); opacity: 0.85; }
+  to { transform: translateY(8%) scale(1.08); opacity: 1; }
+}
+
+@keyframes type-shine {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.12); }
+}
+
+@keyframes tag-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

@@ -1,6 +1,11 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { interpretBasicChart } from './lib/gemini'
 import { SAMPLE_BASIC_CHART } from './lib/sajuPrompt'
+import {
+  parseShareMeta,
+  shareReading,
+  stripShareHeader,
+} from './lib/shareCard'
 import { supabase } from './lib/supabase'
 import './App.css'
 
@@ -308,7 +313,8 @@ function HighlightText({ text }) {
 }
 
 const InterpretationBody = memo(function InterpretationBody({ text }) {
-  const blocks = useMemo(() => parseInterpretation(text), [text])
+  const bodyText = useMemo(() => stripShareHeader(text), [text])
+  const blocks = useMemo(() => parseInterpretation(bodyText), [bodyText])
 
   return (
     <div className="interp-body">
@@ -410,9 +416,77 @@ const InterpretationBody = memo(function InterpretationBody({ text }) {
   )
 })
 
-const ResultPanel = memo(function ResultPanel({ interpretation }) {
+const ShareCard = memo(function ShareCard({ meta, onShare, shareState }) {
+  return (
+    <section className="share-card" aria-label="사주 유형 카드">
+      <div className="share-card-glow" aria-hidden="true" />
+      <p className="share-card-eyebrow">MY SAJU TYPE</p>
+      <h2 className="share-card-type">{meta.type}</h2>
+      <p className="share-card-line">{meta.oneliner}</p>
+      {meta.keywords.length > 0 ? (
+        <ul className="share-card-tags" aria-label="키워드">
+          {meta.keywords.map((kw) => (
+            <li key={kw}>#{kw}</li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="share-card-foot">
+        <span className="share-card-name">{meta.name}</span>
+        <button
+          type="button"
+          className="share-btn"
+          onClick={onShare}
+          disabled={shareState === 'sharing'}
+        >
+          {shareState === 'copied'
+            ? '복사됨'
+            : shareState === 'shared'
+              ? '공유됨'
+              : shareState === 'sharing'
+                ? '준비 중…'
+                : '카드 공유하기'}
+        </button>
+      </div>
+    </section>
+  )
+})
+
+const ResultPanel = memo(function ResultPanel({
+  interpretation,
+  name,
+  onStatus,
+}) {
+  const meta = useMemo(
+    () => parseShareMeta(interpretation, name),
+    [interpretation, name],
+  )
+  const [shareState, setShareState] = useState('')
+
+  const handleShare = async () => {
+    setShareState('sharing')
+    try {
+      const result = await shareReading(meta)
+      setShareState(result)
+      onStatus?.(
+        result === 'shared' ? '공유 시트를 열었습니다' : '공유 문구를 복사했어요',
+      )
+      setTimeout(() => setShareState(''), 2000)
+    } catch (err) {
+      setShareState('')
+      onStatus?.(
+        err instanceof Error ? err.message : '공유에 실패했습니다.',
+      )
+    }
+  }
+
   return (
     <article className="result" aria-live="polite">
+      <ShareCard
+        meta={meta}
+        onShare={handleShare}
+        shareState={shareState}
+      />
+
       <div className="result-summary">
         <h2>기본 차트 해석</h2>
         <p>사주 명식을 바탕으로 성격·기질·재능의 흐름을 읽습니다.</p>
@@ -770,11 +844,11 @@ function App() {
           <span className="hero-seal-ring" />
           <span className="hero-seal-inner">命</span>
         </div>
-        <p className="hero-tag">四柱推命 · 四柱八字</p>
+        <p className="hero-tag">四柱 · TYPE CARD</p>
         <h1>
-          <span className="hero-title-accent">사주</span> 입력
+          <span className="hero-title-accent">나의</span> 사주 유형
         </h1>
-        <p className="hero-sub">생년월일을 담아, 당신만의 흐름을 읽어 드립니다 ✦</p>
+        <p className="hero-sub">생년월일을 넣고, 공유할 수 있는 한 장을 받아보세요 ✦</p>
       </header>
 
       <div
@@ -979,12 +1053,12 @@ function App() {
               <>
                 <span className="spinner" aria-hidden="true" />
                 <span className="submit-shimmer" aria-hidden="true" />
-                별자리를 읽는 중…
+                유형 카드 만드는 중…
               </>
             ) : (
               <>
                 <span className="submit-icon" aria-hidden="true">✦</span>
-                {isRecalling ? '다시 해석하기' : '기본 차트 해석하기'}
+                {isRecalling ? '다시 유형 읽기' : '내 유형 카드 받기'}
               </>
             )}
           </button>
@@ -1005,7 +1079,11 @@ function App() {
 
       {interpretation ? (
         <div ref={resultRef}>
-          <ResultPanel interpretation={interpretation} />
+          <ResultPanel
+            interpretation={interpretation}
+            name={name}
+            onStatus={showStatus}
+          />
         </div>
       ) : null}
       </div>
