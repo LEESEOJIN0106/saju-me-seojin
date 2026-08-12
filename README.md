@@ -5,82 +5,67 @@
 ## 주요 기능
 
 - **출생 정보 입력** — 이름, 양력/음력, 생년월일, 태어난 시간, 성별
-- **기본 차트 해석** — 년·월·일·시 네 기둥(四柱)과 AI 해석 결과 제공
-- **구조화된 해석 UI** — 도입, 핵심 키워드, 번호 섹션, 특이점, 종합 의견으로 읽기 쉽게 표시
-
-## 입력 항목
-
-| 항목 | 설명 |
-|------|------|
-| 이름 | 선택 (미입력 가능) |
-| 달력 | 양력 / 음력 |
-| 생년월일 | 직접 입력 (예: `1990` · `01` · `15`) |
-| 태어난 시간 | 24시간 형식 (예: `0930` → `09:30`) |
-| 시간 모름 | 체크 시 시간 없이 해석 요청 |
-| 성별 | 남성 / 여성 |
+- **기본 차트 해석** — 년·월·일·시 네 기둥과 AI 해석
+- **공유 유형 카드** — 한 장으로 읽고 공유
+- **기록 저장** — Supabase에 저장·수정·삭제
+- **Google 로그인** — Supabase Auth OAuth
 
 ## 시작하기
 
-### 1. 의존성 설치
-
 ```bash
 npm install
-```
-
-### 2. 환경 변수 설정
-
-`.env.example`을 복사해 `.env` 파일을 만듭니다.
-
-```bash
 cp .env.example .env
-```
-
-`.env`에 [Google AI Studio](https://aistudio.google.com/apikey)에서 발급한 Gemini API 키를 넣습니다.
-
-```env
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-> `.env`는 Git에 올라가지 않습니다. API 키는 절대 커밋하지 마세요.
-
-### 3. 개발 서버 실행
-
-```bash
 npm run dev
 ```
 
-브라우저에서 표시되는 주소(기본 `http://localhost:5173`)로 접속합니다.
+`.env` 예시:
+
+```env
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key_here
+```
+
+브라우저: `http://localhost:5173`
 
 ## 스크립트
 
 | 명령 | 설명 |
 |------|------|
-| `npm run dev` | 개발 서버 실행 |
+| `npm run dev` | 개발 서버 |
 | `npm run build` | 프로덕션 빌드 |
-| `npm run preview` | 빌드 결과 미리보기 |
-| `npm run lint` | oxlint로 코드 검사 |
+| `npm run preview` | 빌드 미리보기 |
+| `npm run lint` | oxlint |
 
 ## 기술 스택
 
-- **React 19** + **Vite 8**
-- **Google Gemini API** (`@google/genai`)
-- **Noto Sans / Serif KR** — 한글·한자 타이포
+- React 19 + Vite 8
+- Google Gemini (`@google/genai`)
+- Supabase (DB + Google Auth)
 
 ## 프로젝트 구조
 
 ```
 src/
-├── App.jsx          # 입력 폼 · 해석 결과 UI
-├── App.css          # 스타일
+├── App.jsx                 # 폼 · 세션 · 저장 플로우
+├── App.css
+├── components/
+│   ├── Interpretation.jsx  # 해석 본문 렌더
+│   ├── PillarGrid.jsx      # 사주 네 기둥
+│   ├── ReadingsSidebar.jsx # 로그인 · 기록 목록
+│   └── ResultPanel.jsx     # 공유 카드 + 결과
 └── lib/
-    ├── gemini.js    # Gemini API 호출
-    └── sajuPrompt.js # 사주 해석 프롬프트 · 샘플 명식
+    ├── birth.js            # 생년월일 검증 유틸
+    ├── gemini.js
+    ├── parseInterpretation.js
+    ├── sajuPrompt.js
+    ├── shareCard.js
+    └── supabase.js
 ```
 
 ## 배포 시 참고
 
-`VITE_` 접두사 환경 변수는 **빌드 시 클라이언트 JS에 포함**됩니다.  
-공개 배포 시 API 키가 노출될 수 있으므로, 운영 환경에서는 백엔드 프록시를 두는 방식을 권장합니다.
+`VITE_` 환경 변수는 빌드 시 클라이언트에 포함됩니다. 운영에서는 API 키를 백엔드 프록시로 감추는 편이 안전합니다.
 
 ## 라이선스
 
