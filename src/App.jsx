@@ -717,6 +717,7 @@ function App() {
     try {
       const month = pad2(birthMonth)
       const day = pad2(birthDay)
+      const wasUpdate = Boolean(activeReadingId)
       const text = await interpretBasicChart({
         name,
         gender,
@@ -730,28 +731,33 @@ function App() {
       setInterpretation(text)
 
       const displayName = name.trim() || '이름 없음'
-      const { data, error } = await supabase
-        .from('saju_readings')
-        .insert({
-          name: displayName,
-          gender,
-          calendar_type: calendarType,
-          birth_year: birthYear,
-          birth_month: month,
-          birth_day: day,
-          birth_time: timeUnknown ? null : birthTime,
-          time_unknown: timeUnknown,
-          interpretation: text,
-        })
-        .select(READING_COLUMNS)
-        .single()
+      const payload = {
+        name: displayName,
+        gender,
+        calendar_type: calendarType,
+        birth_year: birthYear,
+        birth_month: month,
+        birth_day: day,
+        birth_time: timeUnknown ? null : birthTime,
+        time_unknown: timeUnknown,
+        interpretation: text,
+      }
+
+      const query = activeReadingId
+        ? supabase
+            .from('saju_readings')
+            .update(payload)
+            .eq('id', activeReadingId)
+        : supabase.from('saju_readings').insert(payload)
+
+      const { data, error } = await query.select(READING_COLUMNS).single()
 
       if (error) throw error
       setActiveReadingId(data.id)
       setBirthMonth(month)
       setBirthDay(day)
       setReadings((prev) => [data, ...prev.filter((r) => r.id !== data.id)])
-      showStatus('기록에 저장했습니다')
+      showStatus(wasUpdate ? '기록을 수정했습니다' : '기록에 저장했습니다')
     } catch (err) {
       const message =
         err instanceof Error ? err.message : '해석 중 오류가 발생했습니다.'
@@ -759,6 +765,24 @@ function App() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleDeleteReading = async (reading) => {
+    if (!confirm(`${reading.name || '이름 없음'} 기록을 삭제할까요?`)) return
+
+    const { error } = await supabase
+      .from('saju_readings')
+      .delete()
+      .eq('id', reading.id)
+
+    if (error) {
+      setErrorMessage(error.message)
+      return
+    }
+
+    setReadings((prev) => prev.filter((r) => r.id !== reading.id))
+    if (activeReadingId === reading.id) resetForm()
+    showStatus('기록을 삭제했습니다')
   }
 
   const handleSelectReading = (reading) => {
@@ -818,7 +842,7 @@ function App() {
         ) : (
           <ul className="readings-side-list">
             {readings.map((reading) => (
-              <li key={reading.id}>
+              <li key={reading.id} className="readings-side-row">
                 <button
                   type="button"
                   className={`readings-side-item${activeReadingId === reading.id ? ' is-active' : ''}`}
@@ -831,6 +855,14 @@ function App() {
                   <span className="readings-side-meta">
                     {readingSubtitle(reading)}
                   </span>
+                </button>
+                <button
+                  type="button"
+                  className="readings-delete-btn"
+                  aria-label={`${reading.name || '이름 없음'} 삭제`}
+                  onClick={() => handleDeleteReading(reading)}
+                >
+                  삭제
                 </button>
               </li>
             ))}

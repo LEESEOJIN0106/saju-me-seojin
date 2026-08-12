@@ -170,6 +170,36 @@ body::after {
   scrollbar-width: thin;
 }
 
+.readings-side-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+}
+
+.readings-delete-btn {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid rgba(180, 70, 60, 0.35);
+  border-radius: 999px;
+  background: rgba(180, 70, 60, 0.08);
+  color: #9a3b32;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.readings-delete-btn:hover {
+  background: rgba(180, 70, 60, 0.16);
+  border-color: rgba(180, 70, 60, 0.55);
+}
+
 .readings-side-item {
   display: flex;
   flex-direction: column;
@@ -264,8 +294,14 @@ body::after {
     overflow-x: visible;
   }
 
-  .readings-side-item {
+  .readings-side-row {
+    flex: 0 0 auto;
     width: 100%;
+  }
+
+  .readings-side-item {
+    flex: 1 1 auto;
+    width: auto;
     min-width: 0;
   }
 
