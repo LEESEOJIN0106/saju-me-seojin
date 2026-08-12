@@ -1,7 +1,11 @@
-import { memo, useMemo, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { interpretBasicChart } from './lib/gemini'
 import { SAMPLE_BASIC_CHART } from './lib/sajuPrompt'
+import { supabase } from './lib/supabase'
 import './App.css'
+
+const READING_COLUMNS =
+  'id, name, gender, calendar_type, birth_year, birth_month, birth_day, birth_time, time_unknown, interpretation, created_at'
 
 const PILLAR_ORDER = [
   { key: 'year', label: '년주' },
@@ -95,6 +99,21 @@ function pad2(n) {
   return String(n).padStart(2, '0')
 }
 
+function readingSubtitle(reading) {
+  const gender =
+    reading.gender === 'female' ? '여' : reading.gender === 'male' ? '남' : ''
+  const calendar = reading.calendar_type === 'lunar' ? '음력' : '양력'
+  const birth = `${reading.birth_year}.${pad2(reading.birth_month)}.${pad2(reading.birth_day)}`
+  const time = reading.time_unknown ? '시간 모름' : reading.birth_time || ''
+  return [calendar, birth, time, gender].filter(Boolean).join(' · ')
+}
+
+function clampDay(year, month, day) {
+  if (!day) return day
+  const maxDay = getDaysInMonth(year, month)
+  return Number(day) > maxDay ? String(maxDay) : day
+}
+
 function digitsOnly(value, maxLen) {
   return value.replace(/\D/g, '').slice(0, maxLen)
 }
@@ -128,6 +147,7 @@ function getDaysInMonth(year, month) {
 // 화면 표시용: API 응답의 마크다운 기호만 정리 (로직/상태와 무관)
 function cleanInterpretationLines(text) {
   return text
+    .replace(/\\n/g, '\n')
     .split(/\n+/)
     .map((line) => line.trim())
     .filter((line) => line && !/^(-{3,}|\*{3,}|_{3,}|={3,})$/.test(line))
@@ -476,36 +496,114 @@ function App() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [statusMessage, setStatusMessage] = useState('')
   const [interpretation, setInterpretation] = useState('')
+  const [readings, setReadings] = useState([])
+  const [readingsLoading, setReadingsLoading] = useState(true)
+  const [activeReadingId, setActiveReadingId] = useState(null)
+
+  const birthMonthRef = useRef(null)
+  const birthDayRef = useRef(null)
+  const birthTimeRef = useRef(null)
+  const resultRef = useRef(null)
+  const formCardRef = useRef(null)
+  const statusTimerRef = useRef(null)
 
   const birthDateValid = isValidBirthDate(birthYear, birthMonth, birthDay)
   const birthTimeValid = timeUnknown || isValidBirthTime(birthTime)
+  const isRecalling = Boolean(activeReadingId)
 
   const canSubmit =
     birthDateValid && birthTimeValid && Boolean(gender) && !isLoading
+
+  let missingHint = ''
+  if (!canSubmit && !isLoading) {
+    if (!birthDateValid) missingHint = '생년월일을 확인해 주세요'
+    else if (!birthTimeValid)
+      missingHint =
+        '태어난 시간을 입력하거나 ‘시간 모름’을 체크해 주세요'
+    else if (!gender) missingHint = '성별을 선택해 주세요'
+  }
+
+  const showStatus = (message) => {
+    setStatusMessage(message)
+    if (statusTimerRef.current) clearTimeout(statusTimerRef.current)
+    statusTimerRef.current = setTimeout(() => setStatusMessage(''), 2400)
+  }
+
+  const loadReadings = async () => {
+    const { data, error } = await supabase
+      .from('saju_readings')
+      .select(READING_COLUMNS)
+      .order('created_at', { ascending: false })
+
+    if (error) console.error(error)
+    else setReadings(data ?? [])
+    setReadingsLoading(false)
+  }
+
+  useEffect(() => {
+    loadReadings()
+    return () => {
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!interpretation || isLoading) return
+    resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [interpretation, isLoading])
+
+  const resetForm = () => {
+    setName('')
+    setBirthYear('')
+    setBirthMonth('')
+    setBirthDay('')
+    setBirthTime('')
+    setTimeUnknown(false)
+    setGender('')
+    setCalendarType('solar')
+    setActiveReadingId(null)
+    setInterpretation('')
+    setErrorMessage('')
+  }
+
+  const handleNewInput = () => {
+    resetForm()
+    formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    showStatus('새 입력을 시작해 보세요')
+  }
 
   const handleNameChange = (e) => setName(e.target.value)
 
   const handleBirthYearChange = (e) => {
     const nextYear = digitsOnly(e.target.value, 4)
     setBirthYear(nextYear)
-    const maxDay = getDaysInMonth(nextYear, birthMonth)
-    if (birthDay && Number(birthDay) > maxDay) {
-      setBirthDay(String(maxDay))
-    }
+    setBirthDay((day) => clampDay(nextYear, birthMonth, day))
+    if (nextYear.length === 4) birthMonthRef.current?.focus()
   }
 
   const handleBirthMonthChange = (e) => {
     const nextMonth = digitsOnly(e.target.value, 2)
     setBirthMonth(nextMonth)
-    const maxDay = getDaysInMonth(birthYear, nextMonth)
-    if (birthDay && Number(birthDay) > maxDay) {
-      setBirthDay(String(maxDay))
-    }
+    setBirthDay((day) => clampDay(birthYear, nextMonth, day))
+    if (nextMonth.length === 2) birthDayRef.current?.focus()
   }
 
   const handleBirthDayChange = (e) => {
-    setBirthDay(digitsOnly(e.target.value, 2))
+    const nextDay = digitsOnly(e.target.value, 2)
+    setBirthDay(nextDay)
+    if (nextDay.length === 2 && !timeUnknown) birthTimeRef.current?.focus()
+  }
+
+  const handleBirthMonthBlur = () => {
+    if (!birthMonth) return
+    setBirthMonth(pad2(birthMonth))
+  }
+
+  const handleBirthDayBlur = () => {
+    if (!birthDay) return
+    setBirthDay(pad2(birthDay))
   }
 
   const handleBirthTimeChange = (e) => {
@@ -539,20 +637,47 @@ function App() {
 
     setIsLoading(true)
     setErrorMessage('')
+    setStatusMessage('')
     setInterpretation('')
 
     try {
+      const month = pad2(birthMonth)
+      const day = pad2(birthDay)
       const text = await interpretBasicChart({
         name,
         gender,
         birthYear,
-        birthMonth,
-        birthDay,
+        birthMonth: month,
+        birthDay: day,
         birthTime,
         timeUnknown,
         calendarType,
       })
       setInterpretation(text)
+
+      const displayName = name.trim() || '이름 없음'
+      const { data, error } = await supabase
+        .from('saju_readings')
+        .insert({
+          name: displayName,
+          gender,
+          calendar_type: calendarType,
+          birth_year: birthYear,
+          birth_month: month,
+          birth_day: day,
+          birth_time: timeUnknown ? null : birthTime,
+          time_unknown: timeUnknown,
+          interpretation: text,
+        })
+        .select(READING_COLUMNS)
+        .single()
+
+      if (error) throw error
+      setActiveReadingId(data.id)
+      setBirthMonth(month)
+      setBirthDay(day)
+      setReadings((prev) => [data, ...prev.filter((r) => r.id !== data.id)])
+      showStatus('기록에 저장했습니다')
     } catch (err) {
       const message =
         err instanceof Error ? err.message : '해석 중 오류가 발생했습니다.'
@@ -562,8 +687,29 @@ function App() {
     }
   }
 
+  const handleSelectReading = (reading) => {
+    if (activeReadingId === reading.id) {
+      setActiveReadingId(null)
+      setInterpretation('')
+      showStatus('결과를 닫았습니다')
+      return
+    }
+    setActiveReadingId(reading.id)
+    setName(reading.name === '이름 없음' ? '' : reading.name || '')
+    setGender(reading.gender || '')
+    setCalendarType(reading.calendar_type || 'solar')
+    setBirthYear(reading.birth_year || '')
+    setBirthMonth(reading.birth_month || '')
+    setBirthDay(reading.birth_day || '')
+    setTimeUnknown(Boolean(reading.time_unknown))
+    setBirthTime(reading.time_unknown ? '' : reading.birth_time || '')
+    setInterpretation(reading.interpretation)
+    setErrorMessage('')
+    showStatus(`${reading.name || '이름 없음'} 기록을 불러왔어요`)
+  }
+
   return (
-    <div className="page">
+    <div className="layout">
       <div className="ambient" aria-hidden="true">
         <span className="float-char float-char--1">木</span>
         <span className="float-char float-char--2">火</span>
@@ -578,6 +724,47 @@ function App() {
         <span className="spark spark--6" />
       </div>
 
+      <aside className="readings-side" aria-label="저장된 사주">
+        <div className="readings-side-head">
+          <h2 className="readings-side-title">기록</h2>
+          <button
+            type="button"
+            className="readings-new-btn"
+            onClick={handleNewInput}
+          >
+            새 입력
+          </button>
+        </div>
+        {readingsLoading ? (
+          <p className="readings-side-empty">불러오는 중…</p>
+        ) : readings.length === 0 ? (
+          <p className="readings-side-empty">
+            해석하면 여기에 이름이 쌓입니다
+          </p>
+        ) : (
+          <ul className="readings-side-list">
+            {readings.map((reading) => (
+              <li key={reading.id}>
+                <button
+                  type="button"
+                  className={`readings-side-item${activeReadingId === reading.id ? ' is-active' : ''}`}
+                  aria-pressed={activeReadingId === reading.id}
+                  onClick={() => handleSelectReading(reading)}
+                >
+                  <span className="readings-side-name">
+                    {reading.name || '이름 없음'}
+                  </span>
+                  <span className="readings-side-meta">
+                    {readingSubtitle(reading)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </aside>
+
+      <div className="page">
       <header className="hero">
         <div className="hero-seal" aria-hidden="true">
           <span className="hero-seal-ring" />
@@ -590,11 +777,24 @@ function App() {
         <p className="hero-sub">생년월일을 담아, 당신만의 흐름을 읽어 드립니다 ✦</p>
       </header>
 
-      <div className="form-card">
+      <div
+        className={`form-card${isRecalling ? ' is-recalling' : ''}`}
+        ref={formCardRef}
+      >
         <div className="form-card-corner form-card-corner--tl" aria-hidden="true" />
         <div className="form-card-corner form-card-corner--tr" aria-hidden="true" />
         <div className="form-card-corner form-card-corner--bl" aria-hidden="true" />
         <div className="form-card-corner form-card-corner--br" aria-hidden="true" />
+
+        {isRecalling ? (
+          <div className="form-recall" role="status">
+            <span>기록에서 불러온 내용입니다 · 다시 누르면 결과가 닫혀요</span>
+            <button type="button" onClick={handleNewInput}>
+              비우기
+            </button>
+          </div>
+        ) : null}
+
         <form className="form" onSubmit={handleSubmit}>
           {/* 1) 이름 — 가장 먼저, 한 줄 */}
           <section className="field-group" aria-labelledby="section-basic">
@@ -670,6 +870,7 @@ function App() {
                 <label className="date-input" htmlFor="birthMonth">
                   <input
                     id="birthMonth"
+                    ref={birthMonthRef}
                     type="text"
                     inputMode="numeric"
                     autoComplete="bday-month"
@@ -677,6 +878,7 @@ function App() {
                     maxLength={2}
                     value={birthMonth}
                     onChange={handleBirthMonthChange}
+                    onBlur={handleBirthMonthBlur}
                   />
                   <span className="date-input-unit">월</span>
                 </label>
@@ -684,6 +886,7 @@ function App() {
                 <label className="date-input" htmlFor="birthDay">
                   <input
                     id="birthDay"
+                    ref={birthDayRef}
                     type="text"
                     inputMode="numeric"
                     autoComplete="bday-day"
@@ -691,6 +894,7 @@ function App() {
                     maxLength={2}
                     value={birthDay}
                     onChange={handleBirthDayChange}
+                    onBlur={handleBirthDayBlur}
                   />
                   <span className="date-input-unit">일</span>
                 </label>
@@ -702,6 +906,7 @@ function App() {
                 <span className="field-label">태어난 시간</span>
                 <input
                   id="birthTime"
+                  ref={birthTimeRef}
                   type="text"
                   inputMode="numeric"
                   placeholder="14:30"
@@ -759,6 +964,12 @@ function App() {
             </fieldset>
           </section>
 
+          {missingHint ? (
+            <p className="submit-hint" aria-live="polite">
+              {missingHint}
+            </p>
+          ) : null}
+
           <button
             className={`submit-btn${isLoading ? ' is-loading' : ''}`}
             type="submit"
@@ -773,7 +984,7 @@ function App() {
             ) : (
               <>
                 <span className="submit-icon" aria-hidden="true">✦</span>
-                기본 차트 해석하기
+                {isRecalling ? '다시 해석하기' : '기본 차트 해석하기'}
               </>
             )}
           </button>
@@ -786,7 +997,18 @@ function App() {
         </p>
       ) : null}
 
-      {interpretation ? <ResultPanel interpretation={interpretation} /> : null}
+      {statusMessage ? (
+        <p className="status status--ok" role="status">
+          {statusMessage}
+        </p>
+      ) : null}
+
+      {interpretation ? (
+        <div ref={resultRef}>
+          <ResultPanel interpretation={interpretation} />
+        </div>
+      ) : null}
+      </div>
     </div>
   )
 }
