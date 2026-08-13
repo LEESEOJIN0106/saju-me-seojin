@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { AnalysisLoading } from './components/AnalysisLoading'
 import { ReadingsSidebar } from './components/ReadingsSidebar'
 import { ResultPanel } from './components/ResultPanel'
 import {
@@ -10,6 +11,7 @@ import {
 } from './lib/birth'
 import { interpretBasicChart } from './lib/gemini'
 import { supabase } from './lib/supabase'
+import { friendlyError } from './lib/uxCopy'
 import './App.css'
 
 const READING_COLUMNS =
@@ -68,11 +70,12 @@ function App() {
 
   let missingHint = ''
   if (!canSubmit && !isLoading) {
-    if (!user) missingHint = 'Google로 로그인한 뒤 기록을 저장할 수 있어요'
-    else if (!birthDateValid) missingHint = '생년월일을 확인해 주세요'
+    if (!user) missingHint = 'Google로 로그인한 뒤 유형 카드를 받을 수 있어요'
+    else if (!birthDateValid)
+      missingHint = '출생일을 확인해 주세요. 올바른 날짜여야 해석할 수 있어요'
     else if (!birthTimeValid)
       missingHint =
-        '태어난 시간을 입력하거나 ‘시간 모름’을 체크해 주세요'
+        '태어난 시간을 입력하거나 ‘출생시간을 모르겠어요’를 선택해 주세요'
     else if (!gender) missingHint = '성별을 선택해 주세요'
   }
 
@@ -146,7 +149,7 @@ function App() {
       options: { redirectTo: window.location.origin },
     })
     if (error) {
-      setErrorMessage(error.message)
+      setErrorMessage(friendlyError(error))
       setAuthBusy(false)
     }
   }
@@ -154,7 +157,7 @@ function App() {
   const handleSignOut = async () => {
     setAuthBusy(true)
     const { error } = await supabase.auth.signOut()
-    if (error) setErrorMessage(error.message)
+    if (error) setErrorMessage(friendlyError(error))
     else showStatus('로그아웃했습니다')
     setAuthBusy(false)
   }
@@ -266,9 +269,7 @@ function App() {
       setReadings((prev) => [data, ...prev.filter((r) => r.id !== data.id)])
       showStatus(wasUpdate ? '기록을 수정했습니다' : '기록에 저장했습니다')
     } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : '해석 중 오류가 발생했습니다.',
-      )
+      setErrorMessage(friendlyError(err))
     } finally {
       setIsLoading(false)
     }
@@ -283,7 +284,7 @@ function App() {
       .eq('id', reading.id)
 
     if (error) {
-      setErrorMessage(error.message)
+      setErrorMessage(friendlyError(error))
       return
     }
 
@@ -351,12 +352,12 @@ function App() {
             <span className="hero-seal-ring" />
             <span className="hero-seal-inner">命</span>
           </div>
-          <p className="hero-tag">四柱 · TYPE CARD</p>
+          <p className="hero-tag">四柱 · EASY READ</p>
           <h1>
             <span className="hero-title-accent">나의</span> 사주 유형
           </h1>
           <p className="hero-sub">
-            생년월일을 넣고, 공유할 수 있는 한 장을 받아보세요 ✦
+            전문용어 없이도, 한눈에 이해할 수 있는 한 장을 받아보세요
           </p>
         </header>
 
@@ -519,7 +520,7 @@ function App() {
                     checked={timeUnknown}
                     onChange={handleTimeUnknownChange}
                   />
-                  <span>시간 모름</span>
+                  <span>출생시간을 모르겠어요</span>
                 </label>
               </div>
             </section>
@@ -570,24 +571,38 @@ function App() {
                 <>
                   <span className="spinner" aria-hidden="true" />
                   <span className="submit-shimmer" aria-hidden="true" />
-                  유형 카드 만드는 중…
+                  풀어보는 중…
                 </>
               ) : (
                 <>
                   <span className="submit-icon" aria-hidden="true">
                     ✦
                   </span>
-                  {isRecalling ? '다시 유형 읽기' : '내 유형 카드 받기'}
+                  {isRecalling ? '다시 쉽게 풀어보기' : '한눈에 풀어보기'}
                 </>
               )}
             </button>
           </form>
         </div>
 
+        {isLoading ? <AnalysisLoading /> : null}
+
         {errorMessage ? (
-          <p className="status status--error" role="alert">
-            {errorMessage}
-          </p>
+          <div className="status status--error" role="alert">
+            <p>{errorMessage}</p>
+            <button
+              type="button"
+              className="status-retry"
+              onClick={() => {
+                setErrorMessage('')
+                formCardRef.current
+                  ?.querySelector('form')
+                  ?.requestSubmit()
+              }}
+            >
+              다시 시도
+            </button>
+          </div>
         ) : null}
 
         {statusMessage ? (

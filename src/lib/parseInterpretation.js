@@ -95,7 +95,7 @@ export function parseInterpretation(text) {
     }
 
     const subMatch = line.match(SUBITEM_RE)
-    if (subMatch && subMatch[1].length <= 14 && !/^\d/.test(subMatch[1])) {
+    if (subMatch && subMatch[1].length <= 20 && !/^\d/.test(subMatch[1])) {
       const item = {
         type: 'subitem',
         label: subMatch[1].trim(),

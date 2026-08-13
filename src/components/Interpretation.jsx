@@ -1,6 +1,7 @@
-import { memo, useMemo } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { parseInterpretation } from '../lib/parseInterpretation'
 import { stripShareHeader } from '../lib/shareCard'
+import { softenSubLabel } from '../lib/uxCopy'
 
 function HighlightText({ text }) {
   const parts = text.split(/([''""][^''""]+[''""]|[（(][^）)]+[）)])/g)
@@ -51,15 +52,15 @@ function InterpretationItem({ item, standalone = false }) {
 
   if (item.type === 'subitem') {
     const tone =
-      item.label.includes('긍정') || item.label.includes('강점')
+      /긍정|강점/.test(item.label)
         ? 'positive'
-        : item.label.includes('부정') || item.label.includes('약점')
-          ? 'negative'
+        : /부정|약점|조심/.test(item.label)
+          ? 'careful'
           : 'neutral'
 
     return (
       <div className={`interp-subitem interp-subitem--${tone}`}>
-        <span className="interp-subitem-label">{item.label}</span>
+        <span className="interp-subitem-label">{softenSubLabel(item.label)}</span>
         <p>
           <HighlightText text={item.content} />
         </p>
@@ -74,9 +75,37 @@ function InterpretationItem({ item, standalone = false }) {
   )
 }
 
-export const InterpretationBody = memo(function InterpretationBody({ text }) {
+export const InterpretationBody = memo(function InterpretationBody({
+  text,
+  focusTitle = null,
+}) {
   const bodyText = useMemo(() => stripShareHeader(text), [text])
   const blocks = useMemo(() => parseInterpretation(bodyText), [bodyText])
+  const firstSectionIdx = useMemo(
+    () => blocks.findIndex((b) => b.type === 'section'),
+    [blocks],
+  )
+  const [openMap, setOpenMap] = useState({})
+
+  useEffect(() => {
+    if (firstSectionIdx < 0) return
+    setOpenMap({ [firstSectionIdx]: true })
+  }, [text, firstSectionIdx])
+
+  useEffect(() => {
+    if (!focusTitle) return
+    const idx = blocks.findIndex(
+      (b) => b.type === 'section' && focusTitle && b.title.includes(focusTitle),
+    )
+    if (idx < 0) return
+    setOpenMap((prev) => ({ ...prev, [idx]: true }))
+    const id = window.setTimeout(() => {
+      document
+        .getElementById(`interp-section-${idx}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+    return () => window.clearTimeout(id)
+  }, [focusTitle, blocks])
 
   return (
     <div className="interp-body">
@@ -86,9 +115,7 @@ export const InterpretationBody = memo(function InterpretationBody({ text }) {
         if (block.type === 'intro') {
           return (
             <div key={key} className="interp-intro">
-              <span className="interp-intro-badge" aria-hidden="true">
-                ✦
-              </span>
+              <p className="interp-intro-kicker">한눈에 보면</p>
               <p>
                 <HighlightText text={block.content} />
               </p>
@@ -114,13 +141,20 @@ export const InterpretationBody = memo(function InterpretationBody({ text }) {
         }
 
         if (block.type === 'section') {
+          const open = openMap[index] ?? false
           return (
-            <section
+            <details
               key={key}
+              id={`interp-section-${index}`}
               className="interp-section"
               style={{ '--section-i': block.number }}
+              open={open}
+              onToggle={(e) => {
+                const next = e.currentTarget.open
+                setOpenMap((prev) => ({ ...prev, [index]: next }))
+              }}
             >
-              <header className="interp-section-head">
+              <summary className="interp-section-head">
                 <span className="interp-section-num" aria-hidden="true">
                   {block.number}
                 </span>
@@ -132,7 +166,10 @@ export const InterpretationBody = memo(function InterpretationBody({ text }) {
                     </p>
                   ) : null}
                 </div>
-              </header>
+                <span className="interp-section-toggle" aria-hidden="true">
+                  {open ? '접기' : '자세히'}
+                </span>
+              </summary>
               <div className="interp-section-body">
                 {block.items.map((item, itemIndex) => (
                   <InterpretationItem
@@ -141,7 +178,7 @@ export const InterpretationBody = memo(function InterpretationBody({ text }) {
                   />
                 ))}
               </div>
-            </section>
+            </details>
           )
         }
 
@@ -152,10 +189,7 @@ export const InterpretationBody = memo(function InterpretationBody({ text }) {
         if (block.type === 'summary-header') {
           return (
             <div key={key} className="interp-summary-head">
-              <span className="interp-summary-seal" aria-hidden="true">
-                總
-              </span>
-              <h3>종합 의견</h3>
+              <h3>종합하면</h3>
             </div>
           )
         }
