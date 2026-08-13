@@ -60,11 +60,16 @@ function App() {
   const birthTimeValid = timeUnknown || isValidBirthTime(birthTime)
   const isRecalling = Boolean(activeReadingId)
   const canSubmit =
-    birthDateValid && birthTimeValid && Boolean(gender) && !isLoading
+    Boolean(user) &&
+    birthDateValid &&
+    birthTimeValid &&
+    Boolean(gender) &&
+    !isLoading
 
   let missingHint = ''
   if (!canSubmit && !isLoading) {
-    if (!birthDateValid) missingHint = '생년월일을 확인해 주세요'
+    if (!user) missingHint = 'Google로 로그인한 뒤 기록을 저장할 수 있어요'
+    else if (!birthDateValid) missingHint = '생년월일을 확인해 주세요'
     else if (!birthTimeValid)
       missingHint =
         '태어난 시간을 입력하거나 ‘시간 모름’을 체크해 주세요'
@@ -79,10 +84,24 @@ function App() {
     statusTimerRef.current = setTimeout(() => setStatusMessage(''), 2400)
   }
 
-  const loadReadings = async () => {
+  const clearWorkspace = () => {
+    setReadings([])
+    setActiveReadingId(null)
+    setInterpretation('')
+  }
+
+  const loadReadings = async (userId) => {
+    if (!userId) {
+      clearWorkspace()
+      setReadingsLoading(false)
+      return
+    }
+
+    setReadingsLoading(true)
     const { data, error } = await supabase
       .from('saju_readings')
       .select(READING_COLUMNS)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) console.error(error)
@@ -91,15 +110,21 @@ function App() {
   }
 
   useEffect(() => {
-    loadReadings()
-
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null)
+      const nextUser = data.session?.user ?? null
+      setUser(nextUser)
+      loadReadings(nextUser?.id)
     })
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      const nextUser = session?.user ?? null
+      setUser(nextUser)
+      loadReadings(nextUser?.id)
+      if (!nextUser) {
+        setForm(emptyForm)
+        setErrorMessage('')
+      }
     })
 
     return () => {
@@ -195,6 +220,8 @@ function App() {
     setInterpretation('')
 
     try {
+      if (!user?.id) throw new Error('로그인이 필요합니다.')
+
       const month = pad2(birthMonth)
       const day = pad2(birthDay)
       const wasUpdate = Boolean(activeReadingId)
@@ -212,6 +239,7 @@ function App() {
 
       const displayName = name.trim() || '이름 없음'
       const payload = {
+        user_id: user.id,
         name: displayName,
         gender,
         calendar_type: calendarType,

@@ -50,6 +50,10 @@ export function ReadingsSidebar({
 
       {readingsLoading ? (
         <p className="readings-side-empty">불러오는 중…</p>
+      ) : !user ? (
+        <p className="readings-side-empty">
+          로그인하면 내 기록만 여기에 보여요
+        </p>
       ) : readings.length === 0 ? (
         <p className="readings-side-empty">해석하면 여기에 이름이 쌓입니다</p>
       ) : (
