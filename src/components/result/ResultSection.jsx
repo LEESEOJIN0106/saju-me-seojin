@@ -30,6 +30,8 @@ export function ResultSection({
         />
       ) : (
         <GuestResultGate
+          interpretation={interpretation}
+          name={name}
           authBusy={authBusy}
           onGoogleSignIn={onGoogleSignIn}
           onReset={onReset}
