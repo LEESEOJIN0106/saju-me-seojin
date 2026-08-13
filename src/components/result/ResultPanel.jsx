@@ -1,53 +1,21 @@
 import { memo, useEffect, useMemo, useState } from 'react'
-import { listSectionTitles } from '../lib/listSectionTitles'
+import { trackEvent } from '../../lib/ga'
+import { listSectionTitles } from '../../lib/listSectionTitles'
 import {
-  cardPalette,
   downloadShareImage,
   parseShareMeta,
   shareReading,
   syncCardUrl,
-} from '../lib/shareCard'
-import { buildResultUrl, createSharedResult } from '../lib/sharedResult'
-import { matchTopic, RESULT_TOPICS } from '../lib/uxCopy'
+} from '../../lib/shareCard'
+import { buildResultUrl, createSharedResult } from '../../lib/sharedResult'
+import { matchTopic, RESULT_TOPICS } from '../../lib/uxCopy'
 import { InterpretationBody } from './Interpretation'
+import { TypeCard } from './TypeCard'
+import './ResultPanel.css'
 
 function statusFromError(error, fallback) {
   return error instanceof Error ? error.message : fallback
 }
-
-export const TypeCard = memo(function TypeCard({
-  meta,
-  footer,
-  eyebrow = '물개가 본 유형',
-}) {
-  const palette = cardPalette(meta.type)
-  return (
-    <section
-      className="share-card"
-      style={{ '--card-from': palette.from, '--card-to': palette.to }}
-      aria-label="사주 유형 카드"
-    >
-      <div className="share-card-glow" aria-hidden="true" />
-      <span className="share-card-han" aria-hidden="true">
-        {palette.han}
-      </span>
-      <p className="share-card-eyebrow">{eyebrow}</p>
-      <h2 className="share-card-type">{meta.type}</h2>
-      <p className="share-card-line">{meta.oneliner}</p>
-      {meta.chemistry ? (
-        <p className="share-card-chem">케미 · {meta.chemistry}</p>
-      ) : null}
-      {meta.keywords.length > 0 ? (
-        <ul className="share-card-tags" aria-label="키워드">
-          {meta.keywords.map((kw) => (
-            <li key={kw}>#{kw}</li>
-          ))}
-        </ul>
-      ) : null}
-      {footer}
-    </section>
-  )
-})
 
 export const ResultPanel = memo(function ResultPanel({
   interpretation,
@@ -114,6 +82,10 @@ export const ResultPanel = memo(function ResultPanel({
     try {
       const slug = await ensureShareSlug()
       const result = await shareReading(meta, { resultSlug: slug })
+      trackEvent('share', {
+        method: result === 'shared' ? 'web_share' : 'clipboard',
+        content_type: 'saju_result',
+      })
       setShareState(result)
       onStatus?.(
         result === 'shared'
@@ -135,10 +107,15 @@ export const ResultPanel = memo(function ResultPanel({
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url)
         setShareState('copied')
+        trackEvent('copy_link', { content_type: 'saju_result' })
         onStatus?.('결과 링크를 복사했어요')
       } else {
         await shareReading(meta, { resultSlug: slug })
         setShareState('shared')
+        trackEvent('share', {
+          method: 'web_share',
+          content_type: 'saju_result',
+        })
       }
       setTimeout(() => setShareState(''), 2000)
     } catch (err) {
@@ -152,6 +129,7 @@ export const ResultPanel = memo(function ResultPanel({
     try {
       await downloadShareImage(meta)
       setSaveState('saved')
+      trackEvent('save_image', { content_type: 'saju_result' })
       onStatus?.('스토리용 이미지를 저장해 두었어요')
       setTimeout(() => setSaveState(''), 2000)
     } catch (err) {

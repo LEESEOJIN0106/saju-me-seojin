@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { fetchSharedResult } from '../lib/sharedResult'
-import { friendlyError } from '../lib/uxCopy'
-import { useStatusToast } from '../hooks/useStatusToast'
-import { Mascot } from './Mascot'
+import { useStatusToast } from '../../hooks/useStatusToast'
+import { trackEvent } from '../../lib/ga'
+import { fetchSharedResult } from '../../lib/sharedResult'
+import { friendlyError } from '../../lib/uxCopy'
+import { Mascot } from '../ui/Mascot'
+import { StatusBanner } from '../ui/StatusBanner'
 import { ResultPanel } from './ResultPanel'
+import './ResultSharePage.css'
 
 /** 로그인 없이 공개 공유 링크(/result?s=)로 전체 해석을 본다 */
 export function ResultSharePage() {
@@ -31,6 +34,7 @@ export function ResultSharePage() {
         }
         setSharedResult(result)
         setLoadState('success')
+        trackEvent('share_page_view')
       } catch (error) {
         if (cancelled) return
         setErrorMessage(friendlyError(error))
@@ -55,9 +59,7 @@ export function ResultSharePage() {
         </header>
 
         {loadState === 'loading' ? (
-          <p className="status status--ok" role="status">
-            물개가 결과를 가져오는 중…
-          </p>
+          <StatusBanner statusMessage="물개가 결과를 가져오는 중…" />
         ) : null}
 
         {loadState === 'error' ? (
@@ -69,11 +71,7 @@ export function ResultSharePage() {
           </div>
         ) : null}
 
-        {statusMessage ? (
-          <p className="status status--ok" role="status">
-            {statusMessage}
-          </p>
-        ) : null}
+        <StatusBanner statusMessage={statusMessage} />
 
         {sharedResult ? (
           <>
@@ -84,7 +82,11 @@ export function ResultSharePage() {
               publicView
               onStatus={showStatus}
             />
-            <a className="result-share-cta" href="/">
+            <a
+              className="result-share-cta"
+              href="/"
+              onClick={() => trackEvent('share_page_cta')}
+            >
               내 사주도 물개에게 읽어 달라고 하기
             </a>
           </>

@@ -1,0 +1,83 @@
+/* ????Floating ambient ????*/
+.ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  opacity: 0.5;
+}
+
+.float-char {
+  position: absolute;
+  font-family: var(--font-display);
+  font-weight: 600;
+  opacity: 0.09;
+  color: var(--primary);
+  user-select: none;
+  animation: float-drift 28s ease-in-out infinite;
+}
+
+.float-char--1 {
+  top: 8%;
+  left: 6%;
+  font-size: 3.5rem;
+  color: var(--el-wood);
+  animation-delay: 0s;
+}
+
+.float-char--2 {
+  top: 18%;
+  right: 8%;
+  font-size: 2.8rem;
+  color: var(--el-fire);
+  animation-delay: -3s;
+}
+
+.float-char--3 {
+  top: 55%;
+  left: 4%;
+  font-size: 2.2rem;
+  color: var(--el-earth);
+  animation-delay: -6s;
+}
+
+.float-char--4 {
+  bottom: 25%;
+  right: 5%;
+  font-size: 3rem;
+  color: var(--el-metal);
+  animation-delay: -9s;
+}
+
+.float-char--5 {
+  bottom: 12%;
+  left: 12%;
+  font-size: 2.5rem;
+  color: var(--el-water);
+  animation-delay: -12s;
+}
+
+.spark {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--primary-mid);
+  opacity: 0.45;
+  box-shadow: 0 0 8px rgba(91, 159, 212, 0.2);
+  animation: spark-pulse 5s ease-in-out infinite;
+}
+
+.spark--1 { top: 12%; left: 25%; animation-delay: 0s; }
+.spark--2 { top: 28%; right: 18%; animation-delay: -0.8s; }
+.spark--3 { top: 45%; left: 15%; animation-delay: -1.6s; }
+.spark--4 { bottom: 35%; right: 22%; animation-delay: -2.4s; }
+.spark--5 { bottom: 18%; left: 30%; animation-delay: -1.2s; }
+.spark--6 { top: 70%; right: 10%; animation-delay: -2s; }
+
+@media (max-width: 480px) {
+  .float-char {
+    opacity: 0.05;
+  }
+}

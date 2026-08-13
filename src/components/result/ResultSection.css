@@ -1,0 +1,40 @@
+.result-ready {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(126, 182, 232, 0.4);
+  background: linear-gradient(135deg, var(--ice) 0%, #fff 70%);
+  box-shadow: var(--shadow);
+  animation: fade-up 0.35s ease both;
+}
+
+.result-ready .mascot {
+  width: 4.8rem;
+  height: 4.35rem;
+  flex: 0 0 auto;
+}
+
+.result-ready-copy {
+  min-width: 0;
+}
+
+.result-ready-kicker {
+  margin: 0 0 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.result-ready-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}

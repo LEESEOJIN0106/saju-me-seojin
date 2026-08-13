@@ -1,0 +1,160 @@
+/* ????Share type card ????*/
+.share-card {
+  position: relative;
+  overflow: hidden;
+  padding: 1.4rem 1.25rem 1.2rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    165deg,
+    var(--card-from, var(--primary)) 0%,
+    var(--card-to, var(--primary-dark)) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-lift);
+  color: #f4f1f7;
+  animation: share-card-in 0.45s ease both;
+}
+
+.share-card-han {
+  position: absolute;
+  right: -0.15em;
+  top: 1.4rem;
+  font-family: var(--font-display);
+  font-size: 7.5rem;
+  font-weight: 400;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+.share-card-glow {
+  position: absolute;
+  inset: -30% -10% auto;
+  height: 60%;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(200, 169, 107, 0.22) 0%, transparent 55%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+.share-card-eyebrow {
+  position: relative;
+  margin: 0 0 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgba(243, 233, 210, 0.85);
+}
+
+.share-card-type {
+  position: relative;
+  margin: 0 0 0.55rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 5.5vw, 2.05rem);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.share-card-line {
+  position: relative;
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(248, 244, 234, 0.88);
+}
+
+.share-card-chem {
+  position: relative;
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gold-light);
+}
+
+.share-card-tags {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1.05rem;
+  padding: 0;
+  list-style: none;
+}
+
+.share-card-tags li {
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f4f1f7;
+  animation: tag-pop 0.35s ease both;
+}
+
+.share-card-tags li:nth-child(2) { animation-delay: 0.06s; }
+.share-card-tags li:nth-child(3) { animation-delay: 0.12s; }
+.share-card-tags li:nth-child(4) { animation-delay: 0.18s; }
+
+.share-card-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.share-card-foot--actions {
+  flex-wrap: wrap;
+}
+
+.share-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.share-card-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(244, 241, 247, 0.72);
+}
+
+.share-btn {
+  flex: 0 0 auto;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.95rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--gold);
+  color: var(--primary-dark);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+
+.share-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.share-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.share-btn--ghost {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f4f1f7;
+  box-shadow: none;
+}

@@ -1,7 +1,8 @@
 import { memo, useEffect, useMemo, useState } from 'react'
-import { parseInterpretation } from '../lib/parseInterpretation'
-import { stripShareHeader } from '../lib/shareCard'
-import { softenSubLabel } from '../lib/uxCopy'
+import { parseInterpretation } from '../../lib/parseInterpretation'
+import { stripShareHeader } from '../../lib/shareCard'
+import { softenSubLabel } from '../../lib/uxCopy'
+import './Interpretation.css'
 
 function HighlightText({ text }) {
   const parts = text.split(/([''""][^''""]+[''""]|[（(][^）)]+[）)])/g)

@@ -51,7 +51,13 @@ src/
 ├── hooks/
 │   ├── useSajuApp.js       # 세션 · 프로필 · 해석 흐름
 │   └── useStatusToast.js
-├── components/             # 폼 · 결과 · 사이드바 · 모달
+├── components/
+│   ├── layout/             # 배경 · 히어로 · 게스트 바
+│   ├── fortune/            # 사주 입력 폼
+│   ├── result/             # 해석 · 공유 · 로딩
+│   ├── readings/           # 기록 사이드바
+│   ├── profile/            # 프로필 모달
+│   └── ui/                 # 마스코트 · 필드 · 버튼
 └── lib/                    # 출생 검증, API, 해석, 공유
 ```
 

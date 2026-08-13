@@ -1,0 +1,21 @@
+.inbound-teaser {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  animation: fade-up 0.45s ease both;
+}
+
+.inbound-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--primary);
+}
+
+.inbound-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  text-align: center;
+}

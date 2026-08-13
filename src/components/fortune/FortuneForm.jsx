@@ -1,59 +1,8 @@
-import {
-  formatBirthDateLabel,
-  formatBirthTimeLabel,
-  formatCalendarLabel,
-  formatGenderLabel,
-} from '../lib/birth'
-import { BirthFields, GenderField } from './BirthFields'
-import { SubmitButton } from './SubmitButton'
-
-function ProfileSummary({ profile, isLoading, onOpenProfile, onInterpret, onOpenGuestForm }) {
-  return (
-    <section className="profile-summary" aria-label="내 사주 정보">
-      <div className="profile-summary-head">
-        <h2>내 사주 정보</h2>
-        <button type="button" className="readings-new-btn" onClick={onOpenProfile}>
-          정보 수정
-        </button>
-      </div>
-      <dl className="profile-view-list">
-        <div className="profile-view-row">
-          <dt>이름</dt>
-          <dd>{profile.name?.trim() || '이름 없음'}</dd>
-        </div>
-        <div className="profile-view-row">
-          <dt>생년월일</dt>
-          <dd>
-            {formatCalendarLabel(profile.calendar_type)}{' '}
-            {formatBirthDateLabel(profile)}
-          </dd>
-        </div>
-        <div className="profile-view-row">
-          <dt>태어난 시간</dt>
-          <dd>{formatBirthTimeLabel(profile)}</dd>
-        </div>
-        <div className="profile-view-row">
-          <dt>성별</dt>
-          <dd>{formatGenderLabel(profile.gender)}</dd>
-        </div>
-      </dl>
-      <SubmitButton
-        busy={isLoading}
-        busyLabel="물개가 읽는 중…"
-        disabled={isLoading}
-        onClick={onInterpret}
-      >
-        <span className="submit-icon" aria-hidden="true">
-          ✦
-        </span>
-        물개에게 읽어 달라고 하기
-      </SubmitButton>
-      <button type="button" className="guest-form-toggle" onClick={onOpenGuestForm}>
-        다른 사람 사주 보기
-      </button>
-    </section>
-  )
-}
+import { useRef, useState } from 'react'
+import { BirthFields, GenderField } from '../ui/BirthFields'
+import { SubmitButton } from '../ui/SubmitButton'
+import { ProfileSummary } from './ProfileSummary'
+import './FortuneForm.css'
 
 export function FortuneForm({
   formCardRef,
@@ -74,6 +23,24 @@ export function FortuneForm({
 }) {
   const showSummary = profileReady && !guestFormOpen && !isRecalling
   const patch = (next) => setForm((prev) => ({ ...prev, ...next }))
+  const [triedSubmit, setTriedSubmit] = useState(false)
+  const genderSectionRef = useRef(null)
+  const genderMissing = triedSubmit && Boolean(missingHint) && !form.gender
+
+  const handleFormSubmit = (e) => {
+    setTriedSubmit(true)
+    if (!canSubmit) {
+      e.preventDefault()
+      if (!form.gender) {
+        genderSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+      }
+      return
+    }
+    onSubmit(e)
+  }
 
   return (
     <div
@@ -103,7 +70,7 @@ export function FortuneForm({
           onOpenGuestForm={onOpenGuestForm}
         />
       ) : (
-        <form className="form" onSubmit={onSubmit}>
+        <form className="form" onSubmit={handleFormSubmit}>
           {profileReady && guestFormOpen && !isRecalling ? (
             <div className="form-recall form-recall--profile" role="status">
               <span>다른 사람 정보를 적는 중이에요</span>
@@ -142,15 +109,27 @@ export function FortuneForm({
             />
           </section>
 
-          <section className="field-group" aria-labelledby="section-gender">
+          <section
+            className="field-group"
+            aria-labelledby="section-gender"
+            ref={genderSectionRef}
+          >
             <h2 id="section-gender">
               <span className="section-num">參</span> 성별
             </h2>
-            <GenderField idPrefix="birth-" form={form} patch={patch} />
+            <GenderField
+              idPrefix="birth-"
+              form={form}
+              patch={patch}
+              invalid={genderMissing}
+            />
           </section>
 
           {missingHint ? (
-            <p className="submit-hint" aria-live="polite">
+            <p
+              className={`submit-hint${triedSubmit ? ' submit-hint--warn' : ''}`}
+              aria-live="polite"
+            >
               {missingHint}
             </p>
           ) : null}
@@ -159,7 +138,7 @@ export function FortuneForm({
             type="submit"
             busy={isLoading}
             busyLabel="물개가 읽는 중…"
-            disabled={!canSubmit}
+            disabled={isLoading}
           >
             <span className="submit-icon" aria-hidden="true">
               ✦

@@ -2,9 +2,10 @@ import {
   formatBirthDateLabel,
   formatBirthTimeLabel,
   readingMetaParts,
-} from '../lib/birth'
-import { isProfileComplete } from '../lib/profile'
-import { Mascot } from './Mascot'
+} from '../../lib/birth'
+import { isProfileComplete } from '../../lib/profile'
+import { Mascot } from '../ui/Mascot'
+import './ReadingsSidebar.css'
 
 function MetaChips({ row, dense = false }) {
   const parts = readingMetaParts(row)
@@ -85,7 +86,7 @@ export function ReadingsSidebar({
             type="button"
             className="auth-btn auth-btn--google"
             disabled={authBusy}
-            onClick={onGoogleSignIn}
+            onClick={() => onGoogleSignIn('sidebar')}
           >
             Google로 로그인
           </button>

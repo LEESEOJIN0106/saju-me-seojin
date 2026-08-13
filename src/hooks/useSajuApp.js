@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { isValidBirthDate, isValidBirthTime, normalizeBirthForm } from '../lib/birth'
+import { trackEvent } from '../lib/ga'
 import { interpretBasicChart } from '../lib/gemini'
 import {
   clearPending,
@@ -246,7 +247,11 @@ export function useSajuApp() {
     resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [interpretation, isLoading])
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (source) => {
+    trackEvent('login', {
+      method: 'google',
+      source: typeof source === 'string' ? source : 'unknown',
+    })
     if (!user && interpretation) writePending({ form, interpretation })
     setAuthBusy(true)
     setErrorMessage('')
@@ -281,6 +286,7 @@ export function useSajuApp() {
   }
 
   const handleNewInput = () => {
+    trackEvent('guest_form_open', { source: 'sidebar' })
     resetForm()
     setGuestFormOpen(true)
     formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -311,6 +317,7 @@ export function useSajuApp() {
       await saveProfile(nextForm)
       setEditProfileOpen(false)
       setGuestFormOpen(false)
+      trackEvent('save_profile', { mode: wasOnboard ? 'onboard' : 'edit' })
       showStatus(
         wasOnboard
           ? '프로필 저장 완료! 이제 물개가 읽어 줄게요'
@@ -344,6 +351,7 @@ export function useSajuApp() {
 
   const handleInterpretProfile = async () => {
     if (!profileReady || isLoading) return
+    trackEvent('interpret', { source: 'profile', logged_in: true })
     setIsLoading(true)
     setErrorMessage('')
     setInterpretation('')
@@ -365,6 +373,10 @@ export function useSajuApp() {
     setIsLoading(true)
     setErrorMessage('')
     setInterpretation('')
+    trackEvent('interpret', {
+      source: isRecalling ? 'recall' : guestFormOpen ? 'other' : 'form',
+      logged_in: Boolean(user),
+    })
 
     try {
       const wasUpdate = Boolean(activeReadingId)
@@ -423,11 +435,13 @@ export function useSajuApp() {
   }
 
   const handleGuestReset = () => {
+    trackEvent('guest_reset')
     setInterpretation('')
     clearPending()
   }
 
   const handleOpenGuestForm = () => {
+    trackEvent('guest_form_open', { source: 'profile_summary' })
     resetForm()
     setGuestFormOpen(true)
   }

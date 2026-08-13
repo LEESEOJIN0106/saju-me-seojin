@@ -1,0 +1,98 @@
+.submit-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 3.15rem;
+  margin-top: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    180deg,
+    var(--sky) 0%,
+    var(--primary) 55%,
+    var(--primary-dark) 100%
+  );
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(91, 159, 212, 0.28);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.submit-btn::after {
+  content: none;
+}
+
+.submit-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.14),
+    transparent
+  );
+  animation: btn-shimmer 2.2s ease-in-out infinite;
+}
+
+.submit-icon {
+  font-size: 0.75rem;
+  color: var(--gold-light);
+}
+
+.submit-btn:hover:not(:disabled) {
+  filter: brightness(1.04);
+  box-shadow: 0 10px 24px rgba(91, 159, 212, 0.28);
+  transform: translateY(-1px);
+}
+
+.submit-btn:hover:not(:disabled)::after {
+  opacity: 0;
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+
+.submit-btn:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.submit-btn.is-loading {
+  pointer-events: none;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(248, 244, 234, 0.28);
+  border-top-color: var(--accent-bright);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  flex-shrink: 0;
+}
+
+.submit-hint {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.submit-hint--warn {
+  color: var(--accent-deep);
+  font-weight: 600;
+}

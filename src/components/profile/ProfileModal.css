@@ -1,0 +1,108 @@
+/* Profile modal */
+.profile-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: end center;
+  padding: 4.5rem 0 0;
+  background: rgba(36, 33, 43, 0.42);
+  backdrop-filter: blur(4px);
+}
+
+.profile-modal {
+  position: relative;
+  width: min(100%, 28rem);
+  max-height: min(88dvh, 44rem);
+  overflow: auto;
+  padding: 1.25rem 1.2rem 1.4rem;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lift);
+  animation: fade-up 0.28s ease both;
+}
+
+.profile-modal--peek {
+  overflow: visible;
+  padding-top: 0.35rem;
+}
+
+.profile-modal-peek {
+  position: absolute;
+  left: 50%;
+  top: -4.2rem;
+  z-index: 2;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 8px 16px rgba(126, 182, 232, 0.25));
+}
+
+.profile-modal-peek .mascot {
+  width: 9.5rem;
+  height: 8.6rem;
+}
+
+.profile-modal-head {
+  margin-bottom: 1rem;
+  padding-top: 0.35rem;
+}
+
+.profile-modal-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--primary);
+}
+
+.profile-modal-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.28rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.profile-modal-sub {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.profile-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.profile-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.profile-modal-submit {
+  flex: 1;
+}
+
+@media (min-width: 640px) {
+  .profile-modal-backdrop {
+    place-items: center;
+    padding: 5.5rem 1.5rem 1.5rem;
+  }
+
+  .profile-modal {
+    border-radius: var(--radius-lg);
+  }
+
+  .profile-modal-peek {
+    top: -5rem;
+  }
+
+  .profile-modal-peek .mascot {
+    width: 10.5rem;
+    height: 9.5rem;
+  }
+}

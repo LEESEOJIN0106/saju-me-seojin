@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import './AnalysisLoading.css'
 
 /** 대기 화면 — 일러스트 + 진행률(가짜지만 체감용으로 천천히 상승) */
 export function AnalysisLoading() {

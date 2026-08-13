@@ -5,16 +5,17 @@ import {
   formatCalendarLabel,
   formatGenderLabel,
   normalizeBirthForm,
-} from '../lib/birth'
+} from '../../lib/birth'
 import {
   emptyProfileForm,
   isProfileComplete,
   profileMissingHint,
   rowToForm,
-} from '../lib/profile'
-import { BirthFields } from './BirthFields'
-import { Mascot } from './Mascot'
-import { SubmitButton } from './SubmitButton'
+} from '../../lib/profile'
+import { BirthFields } from '../ui/BirthFields'
+import { Mascot } from '../ui/Mascot'
+import { SubmitButton } from '../ui/SubmitButton'
+import './ProfileModal.css'
 
 export function ProfileModal({
   mode = 'onboard',

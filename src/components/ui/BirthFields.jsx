@@ -7,7 +7,8 @@ import {
   isValidBirthDate,
   isValidBirthTime,
   pad2,
-} from '../lib/birth'
+} from '../../lib/birth'
+import './BirthFields.css'
 
 export function BirthFields({
   idPrefix,
@@ -200,7 +201,13 @@ export function BirthFields({
   )
 }
 
-export function GenderField({ idPrefix, form, patch, required = false }) {
+export function GenderField({
+  idPrefix,
+  form,
+  patch,
+  required = false,
+  invalid = false,
+}) {
   return (
     <fieldset className="field">
       <legend className={`field-label${required ? '' : ' visually-hidden'}`}>
@@ -212,7 +219,11 @@ export function GenderField({ idPrefix, form, patch, required = false }) {
           '성별 선택'
         )}
       </legend>
-      <div className="segmented" role="group" aria-label="성별">
+      <div
+        className={`segmented${invalid ? ' is-incomplete' : ''}`}
+        role="group"
+        aria-label="성별"
+      >
         <label className={form.gender === 'male' ? 'is-active' : ''}>
           <input
             type="radio"

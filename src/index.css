@@ -1,1 +1,301 @@
-/* 전역 리셋/토큰은 App.css의 :root / body에서 관리 */
+@import './components/ui/controls.css';
+@import './components/ui/StatusBanner.css';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 90% 48% at 50% -8%, rgba(168, 212, 245, 0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 36% at 100% 0%, rgba(255, 194, 209, 0.28) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 0% 18%, rgba(255, 248, 244, 0.9) 0%, transparent 45%),
+    linear-gradient(180deg, #eef6fc 0%, var(--bg) 34%, var(--bg) 100%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.14;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 16% 10%, rgba(168, 212, 245, 0.12) 0%, transparent 12%),
+    radial-gradient(circle at 84% 14%, rgba(255, 194, 209, 0.12) 0%, transparent 10%);
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  max-width: 28rem;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 1rem 1rem 2.75rem;
+}
+
+.layout {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  min-width: 0;
+  max-width: 28rem;
+  width: 100%;
+  margin-inline: auto;
+  min-height: calc(100dvh - 3.75rem);
+  animation: page-in 0.7s ease both;
+}
+
+@media (min-width: 720px) {
+  #root {
+    max-width: 960px;
+    width: 100%;
+    padding-inline: 1.5rem;
+  }
+
+  .layout {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  .page {
+    flex: 0 1 28rem;
+    margin-inline: 0;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mascot-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes mascot-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+@keyframes share-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes share-glow {
+  from { transform: translateY(0) scale(1); opacity: 0.85; }
+  to { transform: translateY(8%) scale(1.08); opacity: 1; }
+}
+
+@keyframes type-shine {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.12); }
+}
+
+@keyframes tag-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float-drift {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.07;
+  }
+  25% {
+    transform: translate(8px, -12px) rotate(3deg);
+    opacity: 0.1;
+  }
+  50% {
+    transform: translate(-6px, 8px) rotate(-2deg);
+    opacity: 0.06;
+  }
+  75% {
+    transform: translate(10px, 6px) rotate(2deg);
+    opacity: 0.09;
+  }
+}
+
+@keyframes spark-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.8);
+  }
+}
+
+@keyframes seal-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes seal-glow {
+  from {
+    box-shadow:
+      0 0 0 3px rgba(240, 138, 163, 0.15),
+      0 8px 24px rgba(20, 24, 36, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  to {
+    box-shadow:
+      0 0 0 5px rgba(240, 138, 163, 0.28),
+      0 8px 32px rgba(240, 138, 163, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+}
+
+@keyframes shimmer-text {
+  to { background-position: 200% center; }
+}
+
+@keyframes twinkle-bg {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+@keyframes btn-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes icon-twinkle {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes pillar-pop {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes interp-unfold {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pill-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 480px) {
+  #root {
+    padding: 1rem 0.85rem 2rem;
+  }
+}
+
+@media (min-width: 640px) {
+  #root {
+    max-width: 32rem;
+    padding: 1.75rem 1.25rem 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

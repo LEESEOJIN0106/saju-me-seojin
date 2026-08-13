@@ -1,5 +1,6 @@
-import { Mascot } from './Mascot'
-import { SubmitButton } from './SubmitButton'
+import { Mascot } from '../ui/Mascot'
+import { SubmitButton } from '../ui/SubmitButton'
+import './GuestResultGate.css'
 
 export function GuestResultGate({ authBusy, onGoogleSignIn, onReset }) {
   return (
@@ -15,7 +16,7 @@ export function GuestResultGate({ authBusy, onGoogleSignIn, onReset }) {
           busy={authBusy}
           busyLabel="로그인하는 중…"
           disabled={authBusy}
-          onClick={onGoogleSignIn}
+          onClick={() => onGoogleSignIn('result_gate')}
         >
           <span className="submit-icon" aria-hidden="true">
             ✦

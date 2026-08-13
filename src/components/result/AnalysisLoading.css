@@ -1,0 +1,75 @@
+.analysis-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.75rem 0.9rem;
+  border-radius: var(--radius);
+  background: #f7f3ed;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  animation: fade-up 0.3s ease both;
+  overflow: hidden;
+}
+
+/* ??? ?? ?? ????? ??? ???? ????? ?? */
+.analysis-loading-frame {
+  width: 100%;
+  max-width: 22rem;
+  aspect-ratio: 1 / 1.08;
+  overflow: hidden;
+  border-radius: calc(var(--radius) - 4px);
+}
+
+.analysis-loading-art {
+  display: block;
+  width: 100%;
+  height: 122%;
+  object-fit: cover;
+  object-position: top center;
+  animation: mascot-float 4.5s ease-in-out infinite;
+}
+
+.analysis-loading-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  max-width: 18rem;
+  padding: 0 0.25rem;
+}
+
+.analysis-loading-bar {
+  flex: 1;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: rgba(90, 74, 140, 0.12);
+  overflow: hidden;
+}
+
+.analysis-loading-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8b7bb8 0%, #6b5a9e 100%);
+  transition: width 0.2s ease-out;
+}
+
+.analysis-loading-pct {
+  margin: 0;
+  min-width: 2.6rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #5a4a8c;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-loading-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b5a9e;
+  letter-spacing: -0.01em;
+}

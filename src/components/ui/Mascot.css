@@ -1,0 +1,25 @@
+.mascot {
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.mascot--sm {
+  width: 5.75rem;
+  height: 5.25rem;
+}
+
+.mascot--md {
+  width: 8.5rem;
+  height: 7.7rem;
+}
+
+.mascot--lg {
+  width: 12rem;
+  height: 10.9rem;
+}
+
+.mascot--bob {
+  animation: mascot-bob 1.6s ease-in-out infinite;
+}

@@ -1,3 +1,5 @@
+import './Mascot.css'
+
 /** 사주 미 마스코트 — public/mascot.png */
 export function Mascot({
   className = '',
