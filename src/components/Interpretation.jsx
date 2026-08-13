@@ -115,7 +115,7 @@ export const InterpretationBody = memo(function InterpretationBody({
         if (block.type === 'intro') {
           return (
             <div key={key} className="interp-intro">
-              <p className="interp-intro-kicker">한눈에 보면</p>
+              <p className="interp-intro-kicker">물개가 한눈에 보면</p>
               <p>
                 <HighlightText text={block.content} />
               </p>

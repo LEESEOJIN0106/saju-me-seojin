@@ -47,25 +47,21 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key_here
 
 ```
 src/
-├── App.jsx                 # 폼 · 세션 · 저장 플로우
-├── App.css
-├── components/
-│   ├── Interpretation.jsx  # 해석 본문 렌더
-│   ├── PillarGrid.jsx      # 사주 네 기둥
-│   ├── ReadingsSidebar.jsx # 로그인 · 기록 목록
-│   └── ResultPanel.jsx     # 공유 카드 + 결과
-└── lib/
-    ├── birth.js            # 생년월일 검증 유틸
-    ├── gemini.js
-    ├── parseInterpretation.js
-    ├── sajuPrompt.js
-    ├── shareCard.js
-    └── supabase.js
+├── App.jsx                 # 화면 조합
+├── hooks/
+│   ├── useSajuApp.js       # 세션 · 프로필 · 해석 흐름
+│   └── useStatusToast.js
+├── components/             # 폼 · 결과 · 사이드바 · 모달
+└── lib/                    # 출생 검증, API, 해석, 공유
 ```
 
 ## 배포 시 참고
 
 `VITE_` 환경 변수는 빌드 시 클라이언트에 포함됩니다. 운영에서는 API 키를 백엔드 프록시로 감추는 편이 안전합니다.
+
+Google 로그인 후 localhost로 떨어지면 Supabase **Authentication → URL Configuration**에서 Site URL을 프로덕션 도메인으로 두고, Redirect URLs에 프로덕션·`http://localhost:5173/**`를 넣으세요.
+
+출생 정보는 `public.users`, 해석 결과는 `public.saju_readings`에 분리 저장되며 `user_id`로 연결됩니다.
 
 ## 라이선스
 

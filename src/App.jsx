@@ -1,623 +1,201 @@
-import { useEffect, useRef, useState } from 'react'
 import { AnalysisLoading } from './components/AnalysisLoading'
+import { FortuneForm } from './components/FortuneForm'
+import { GuestResultGate } from './components/GuestResultGate'
+import { Mascot } from './components/Mascot'
+import { ProfileModal } from './components/ProfileModal'
 import { ReadingsSidebar } from './components/ReadingsSidebar'
-import { ResultPanel } from './components/ResultPanel'
-import {
-  clampDay,
-  digitsOnly,
-  isValidBirthDate,
-  isValidBirthTime,
-  pad2,
-} from './lib/birth'
-import { interpretBasicChart } from './lib/gemini'
-import { supabase } from './lib/supabase'
-import { friendlyError } from './lib/uxCopy'
+import { ResultPanel, TypeCard } from './components/ResultPanel'
+import { useSajuApp } from './hooks/useSajuApp'
 import './App.css'
 
-const READING_COLUMNS =
-  'id, name, gender, calendar_type, birth_year, birth_month, birth_day, birth_time, time_unknown, interpretation, created_at'
-
-const emptyForm = {
-  name: '',
-  birthYear: '',
-  birthMonth: '',
-  birthDay: '',
-  birthTime: '',
-  timeUnknown: false,
-  gender: '',
-  calendarType: 'solar',
+function AmbientBackground() {
+  return (
+    <div className="ambient" aria-hidden="true">
+      <span className="float-char float-char--1">木</span>
+      <span className="float-char float-char--2">火</span>
+      <span className="float-char float-char--3">土</span>
+      <span className="float-char float-char--4">金</span>
+      <span className="float-char float-char--5">水</span>
+      <span className="spark spark--1" />
+      <span className="spark spark--2" />
+      <span className="spark spark--3" />
+      <span className="spark spark--4" />
+      <span className="spark spark--5" />
+      <span className="spark spark--6" />
+    </div>
+  )
 }
 
 function App() {
-  const [form, setForm] = useState(emptyForm)
-  const {
-    name,
-    birthYear,
-    birthMonth,
-    birthDay,
-    birthTime,
-    timeUnknown,
-    gender,
-    calendarType,
-  } = form
-
-  const [isLoading, setIsLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [statusMessage, setStatusMessage] = useState('')
-  const [interpretation, setInterpretation] = useState('')
-  const [readings, setReadings] = useState([])
-  const [readingsLoading, setReadingsLoading] = useState(true)
-  const [activeReadingId, setActiveReadingId] = useState(null)
-  const [user, setUser] = useState(null)
-  const [authBusy, setAuthBusy] = useState(false)
-
-  const birthMonthRef = useRef(null)
-  const birthDayRef = useRef(null)
-  const birthTimeRef = useRef(null)
-  const formCardRef = useRef(null)
-  const resultRef = useRef(null)
-  const statusTimerRef = useRef(null)
-
-  const birthDateValid = isValidBirthDate(birthYear, birthMonth, birthDay)
-  const birthTimeValid = timeUnknown || isValidBirthTime(birthTime)
-  const isRecalling = Boolean(activeReadingId)
-  const canSubmit =
-    Boolean(user) &&
-    birthDateValid &&
-    birthTimeValid &&
-    Boolean(gender) &&
-    !isLoading
-
-  let missingHint = ''
-  if (!canSubmit && !isLoading) {
-    if (!user) missingHint = 'Google로 로그인한 뒤 유형 카드를 받을 수 있어요'
-    else if (!birthDateValid)
-      missingHint = '출생일을 확인해 주세요. 올바른 날짜여야 해석할 수 있어요'
-    else if (!birthTimeValid)
-      missingHint =
-        '태어난 시간을 입력하거나 ‘출생시간을 모르겠어요’를 선택해 주세요'
-    else if (!gender) missingHint = '성별을 선택해 주세요'
-  }
-
-  const patchForm = (patch) => setForm((prev) => ({ ...prev, ...patch }))
-
-  const showStatus = (message) => {
-    setStatusMessage(message)
-    if (statusTimerRef.current) clearTimeout(statusTimerRef.current)
-    statusTimerRef.current = setTimeout(() => setStatusMessage(''), 2400)
-  }
-
-  const clearWorkspace = () => {
-    setReadings([])
-    setActiveReadingId(null)
-    setInterpretation('')
-  }
-
-  const loadReadings = async (userId) => {
-    if (!userId) {
-      clearWorkspace()
-      setReadingsLoading(false)
-      return
-    }
-
-    setReadingsLoading(true)
-    const { data, error } = await supabase
-      .from('saju_readings')
-      .select(READING_COLUMNS)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-
-    if (error) console.error(error)
-    else setReadings(data ?? [])
-    setReadingsLoading(false)
-  }
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const nextUser = data.session?.user ?? null
-      setUser(nextUser)
-      loadReadings(nextUser?.id)
-    })
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const nextUser = session?.user ?? null
-      setUser(nextUser)
-      loadReadings(nextUser?.id)
-      if (!nextUser) {
-        setForm(emptyForm)
-        setErrorMessage('')
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-      if (statusTimerRef.current) clearTimeout(statusTimerRef.current)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!interpretation || isLoading) return
-    resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [interpretation, isLoading])
-
-  const handleGoogleSignIn = async () => {
-    setAuthBusy(true)
-    setErrorMessage('')
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    })
-    if (error) {
-      setErrorMessage(friendlyError(error))
-      setAuthBusy(false)
-    }
-  }
-
-  const handleSignOut = async () => {
-    setAuthBusy(true)
-    const { error } = await supabase.auth.signOut()
-    if (error) setErrorMessage(friendlyError(error))
-    else showStatus('로그아웃했습니다')
-    setAuthBusy(false)
-  }
-
-  const resetForm = () => {
-    setForm(emptyForm)
-    setActiveReadingId(null)
-    setInterpretation('')
-    setErrorMessage('')
-  }
-
-  const handleNewInput = () => {
-    resetForm()
-    formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    showStatus('새 입력을 시작해 보세요')
-  }
-
-  const handleBirthYearChange = (e) => {
-    const nextYear = digitsOnly(e.target.value, 4)
-    setForm((prev) => ({
-      ...prev,
-      birthYear: nextYear,
-      birthDay: clampDay(nextYear, prev.birthMonth, prev.birthDay),
-    }))
-    if (nextYear.length === 4) birthMonthRef.current?.focus()
-  }
-
-  const handleBirthMonthChange = (e) => {
-    const nextMonth = digitsOnly(e.target.value, 2)
-    setForm((prev) => ({
-      ...prev,
-      birthMonth: nextMonth,
-      birthDay: clampDay(prev.birthYear, nextMonth, prev.birthDay),
-    }))
-    if (nextMonth.length === 2) birthDayRef.current?.focus()
-  }
-
-  const handleBirthDayChange = (e) => {
-    const nextDay = digitsOnly(e.target.value, 2)
-    patchForm({ birthDay: nextDay })
-    if (nextDay.length === 2 && !timeUnknown) birthTimeRef.current?.focus()
-  }
-
-  const handleBirthTimeChange = (e) => {
-    const raw = digitsOnly(e.target.value, 4)
-    patchForm({
-      birthTime: raw.length <= 2 ? raw : `${raw.slice(0, 2)}:${raw.slice(2)}`,
-    })
-  }
-
-  const handleTimeUnknownChange = (e) => {
-    const checked = e.target.checked
-    patchForm({ timeUnknown: checked, birthTime: checked ? '' : birthTime })
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!canSubmit) return
-
-    setIsLoading(true)
-    setErrorMessage('')
-    setStatusMessage('')
-    setInterpretation('')
-
-    try {
-      if (!user?.id) throw new Error('로그인이 필요합니다.')
-
-      const month = pad2(birthMonth)
-      const day = pad2(birthDay)
-      const wasUpdate = Boolean(activeReadingId)
-      const text = await interpretBasicChart({
-        name,
-        gender,
-        birthYear,
-        birthMonth: month,
-        birthDay: day,
-        birthTime,
-        timeUnknown,
-        calendarType,
-      })
-      setInterpretation(text)
-
-      const displayName = name.trim() || '이름 없음'
-      const payload = {
-        user_id: user.id,
-        name: displayName,
-        gender,
-        calendar_type: calendarType,
-        birth_year: birthYear,
-        birth_month: month,
-        birth_day: day,
-        birth_time: timeUnknown ? null : birthTime,
-        time_unknown: timeUnknown,
-        interpretation: text,
-      }
-
-      const query = activeReadingId
-        ? supabase
-            .from('saju_readings')
-            .update(payload)
-            .eq('id', activeReadingId)
-        : supabase.from('saju_readings').insert(payload)
-
-      const { data, error } = await query.select(READING_COLUMNS).single()
-      if (error) throw error
-
-      setActiveReadingId(data.id)
-      patchForm({ birthMonth: month, birthDay: day })
-      setReadings((prev) => [data, ...prev.filter((r) => r.id !== data.id)])
-      showStatus(wasUpdate ? '기록을 수정했습니다' : '기록에 저장했습니다')
-    } catch (err) {
-      setErrorMessage(friendlyError(err))
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleDeleteReading = async (reading) => {
-    if (!confirm(`${reading.name || '이름 없음'} 기록을 삭제할까요?`)) return
-
-    const { error } = await supabase
-      .from('saju_readings')
-      .delete()
-      .eq('id', reading.id)
-
-    if (error) {
-      setErrorMessage(friendlyError(error))
-      return
-    }
-
-    setReadings((prev) => prev.filter((r) => r.id !== reading.id))
-    if (activeReadingId === reading.id) resetForm()
-    showStatus('기록을 삭제했습니다')
-  }
-
-  const handleSelectReading = (reading) => {
-    if (activeReadingId === reading.id) {
-      setActiveReadingId(null)
-      setInterpretation('')
-      showStatus('결과를 닫았습니다')
-      return
-    }
-
-    setActiveReadingId(reading.id)
-    setForm({
-      name: reading.name === '이름 없음' ? '' : reading.name || '',
-      gender: reading.gender || '',
-      calendarType: reading.calendar_type || 'solar',
-      birthYear: reading.birth_year || '',
-      birthMonth: reading.birth_month || '',
-      birthDay: reading.birth_day || '',
-      timeUnknown: Boolean(reading.time_unknown),
-      birthTime: reading.time_unknown ? '' : reading.birth_time || '',
-    })
-    setInterpretation(reading.interpretation)
-    setErrorMessage('')
-    showStatus(`${reading.name || '이름 없음'} 기록을 불러왔어요`)
-  }
+  const app = useSajuApp()
+  const showForm = Boolean(app.user || !app.interpretation)
 
   return (
     <div className="layout">
-      <div className="ambient" aria-hidden="true">
-        <span className="float-char float-char--1">木</span>
-        <span className="float-char float-char--2">火</span>
-        <span className="float-char float-char--3">土</span>
-        <span className="float-char float-char--4">金</span>
-        <span className="float-char float-char--5">水</span>
-        <span className="spark spark--1" />
-        <span className="spark spark--2" />
-        <span className="spark spark--3" />
-        <span className="spark spark--4" />
-        <span className="spark spark--5" />
-        <span className="spark spark--6" />
-      </div>
+      <AmbientBackground />
 
-      <ReadingsSidebar
-        user={user}
-        authBusy={authBusy}
-        onGoogleSignIn={handleGoogleSignIn}
-        onSignOut={handleSignOut}
-        onNewInput={handleNewInput}
-        readings={readings}
-        readingsLoading={readingsLoading}
-        activeReadingId={activeReadingId}
-        onSelectReading={handleSelectReading}
-        onDeleteReading={handleDeleteReading}
-      />
+      {app.user ? (
+        <ReadingsSidebar
+          user={app.user}
+          profile={app.profile}
+          authBusy={app.authBusy}
+          onGoogleSignIn={app.handleGoogleSignIn}
+          onSignOut={app.handleSignOut}
+          onOpenProfile={app.handleOpenProfile}
+          onUseMyProfile={app.handleUseMyProfile}
+          onNewInput={app.handleNewInput}
+          readings={app.readings}
+          readingsLoading={app.readingsLoading}
+          activeReadingId={app.activeReadingId}
+          onSelectReading={app.handleSelectReading}
+          onDeleteReading={app.handleDeleteReading}
+        />
+      ) : app.interpretation || app.isLoading ? null : (
+        <div className="guest-bar">
+          <button
+            type="button"
+            className="guest-bar-login"
+            disabled={app.authBusy}
+            onClick={app.handleGoogleSignIn}
+          >
+            로그인
+          </button>
+        </div>
+      )}
+
+      {app.needsOnboarding ? (
+        <ProfileModal
+          mode="onboard"
+          initial={app.profile}
+          busy={app.profileBusy}
+          errorMessage={app.profileError}
+          onSave={app.handleSaveProfile}
+        />
+      ) : null}
+
+      {app.editProfileOpen && !app.needsOnboarding ? (
+        <ProfileModal
+          mode="view"
+          initial={app.profile}
+          busy={app.profileBusy}
+          errorMessage={app.profileError}
+          onSave={app.handleSaveProfile}
+          onClose={() => {
+            app.setEditProfileOpen(false)
+            app.setProfileError('')
+          }}
+        />
+      ) : null}
 
       <div className="page">
-        <header className="hero">
-          <div className="hero-seal" aria-hidden="true">
-            <span className="hero-seal-ring" />
-            <span className="hero-seal-inner">命</span>
-          </div>
-          <p className="hero-tag">四柱 · EASY READ</p>
-          <h1>
-            <span className="hero-title-accent">나의</span> 사주 유형
-          </h1>
-          <p className="hero-sub">
-            전문용어 없이도, 한눈에 이해할 수 있는 한 장을 받아보세요
-          </p>
-        </header>
-
-        <div
-          className={`form-card${isRecalling ? ' is-recalling' : ''}`}
-          ref={formCardRef}
-        >
-          <div className="form-card-corner form-card-corner--tl" aria-hidden="true" />
-          <div className="form-card-corner form-card-corner--tr" aria-hidden="true" />
-          <div className="form-card-corner form-card-corner--bl" aria-hidden="true" />
-          <div className="form-card-corner form-card-corner--br" aria-hidden="true" />
-
-          {isRecalling ? (
-            <div className="form-recall" role="status">
-              <span>기록에서 불러온 내용입니다 · 다시 누르면 결과가 닫혀요</span>
-              <button type="button" onClick={handleNewInput}>
-                비우기
-              </button>
+        {app.inboundCard && !app.interpretation && !app.isLoading ? (
+          <section className="inbound-teaser">
+            <p className="inbound-kicker">이 유형 카드</p>
+            <TypeCard
+              meta={app.inboundCard}
+              eyebrow={`${app.inboundCard.name}의 유형`}
+              footer={
+                <div className="share-card-foot">
+                  <span className="share-card-name">{app.inboundCard.name}</span>
+                  <button
+                    type="button"
+                    className="share-btn"
+                    onClick={() =>
+                      app.formCardRef.current?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                      })
+                    }
+                  >
+                    내 유형도 읽어 보기
+                  </button>
+                </div>
+              }
+            />
+            <p className="inbound-hint">
+              아래에 생년월일을 넣으면 내 유형도 나와요
+            </p>
+          </section>
+        ) : app.interpretation && !app.user ? null : (
+          <header className="hero">
+            <div className="hero-mascot" aria-hidden="true">
+              <Mascot size="lg" className="hero-mascot-img" />
             </div>
-          ) : null}
+            <p className="hero-brand">사주 미</p>
+            <h1>
+              나는 <span className="hero-title-accent">어떤 형</span>일까
+            </h1>
+            <p className="hero-sub">
+              {app.profileReady
+                ? '저장된 정보로 물개가 바로 유형 카드를 읽어 줄게요'
+                : '생년월일만 넣으면 바로 읽어 볼 수 있어요'}
+            </p>
+          </header>
+        )}
 
-          <form className="form" onSubmit={handleSubmit}>
-            <section className="field-group" aria-labelledby="section-basic">
-              <h2 id="section-basic">
-                <span className="section-num">壹</span> 기본
-              </h2>
-              <label className="field" htmlFor="name">
-                <span className="field-label">이름</span>
-                <input
-                  id="name"
-                  type="text"
-                  placeholder="홍길동"
-                  autoComplete="name"
-                  value={name}
-                  onChange={(e) => patchForm({ name: e.target.value })}
-                />
-              </label>
-            </section>
+        {showForm ? (
+          <FortuneForm
+            formCardRef={app.formCardRef}
+            isRecalling={app.isRecalling}
+            profileReady={app.profileReady}
+            guestFormOpen={app.guestFormOpen}
+            profile={app.profile}
+            form={app.form}
+            setForm={app.setForm}
+            isLoading={app.isLoading}
+            canSubmit={app.canSubmit}
+            missingHint={app.missingHint}
+            onOpenProfile={app.handleOpenProfile}
+            onInterpretProfile={app.handleInterpretProfile}
+            onUseMyProfile={app.handleUseMyProfile}
+            onOpenGuestForm={app.handleOpenGuestForm}
+            onSubmit={app.handleSubmit}
+          />
+        ) : null}
 
-            <section className="field-group" aria-labelledby="section-birth">
-              <h2 id="section-birth">
-                <span className="section-num">貳</span> 출생
-              </h2>
+        {app.isLoading ? <AnalysisLoading /> : null}
 
-              <fieldset className="field">
-                <legend className="field-label">달력</legend>
-                <div
-                  className="segmented"
-                  role="group"
-                  aria-label="양력 또는 음력"
-                >
-                  <label className={calendarType === 'solar' ? 'is-active' : ''}>
-                    <input
-                      type="radio"
-                      name="calendarType"
-                      value="solar"
-                      checked={calendarType === 'solar'}
-                      onChange={() => patchForm({ calendarType: 'solar' })}
-                    />
-                    <span className="segment-icon" aria-hidden="true">
-                      ☀
-                    </span>
-                    양력
-                  </label>
-                  <label className={calendarType === 'lunar' ? 'is-active' : ''}>
-                    <input
-                      type="radio"
-                      name="calendarType"
-                      value="lunar"
-                      checked={calendarType === 'lunar'}
-                      onChange={() => patchForm({ calendarType: 'lunar' })}
-                    />
-                    <span className="segment-icon" aria-hidden="true">
-                      ☽
-                    </span>
-                    음력
-                  </label>
-                </div>
-              </fieldset>
-
-              <fieldset className="field">
-                <legend className="field-label">생년월일</legend>
-                <div className="date-inputs" role="group" aria-label="생년월일">
-                  <label className="date-input" htmlFor="birthYear">
-                    <input
-                      id="birthYear"
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="bday-year"
-                      placeholder="1990"
-                      maxLength={4}
-                      value={birthYear}
-                      onChange={handleBirthYearChange}
-                    />
-                    <span className="date-input-unit">년</span>
-                  </label>
-                  <label className="date-input" htmlFor="birthMonth">
-                    <input
-                      id="birthMonth"
-                      ref={birthMonthRef}
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="bday-month"
-                      placeholder="01"
-                      maxLength={2}
-                      value={birthMonth}
-                      onChange={handleBirthMonthChange}
-                      onBlur={() => {
-                        if (birthMonth) patchForm({ birthMonth: pad2(birthMonth) })
-                      }}
-                    />
-                    <span className="date-input-unit">월</span>
-                  </label>
-                  <label className="date-input" htmlFor="birthDay">
-                    <input
-                      id="birthDay"
-                      ref={birthDayRef}
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="bday-day"
-                      placeholder="15"
-                      maxLength={2}
-                      value={birthDay}
-                      onChange={handleBirthDayChange}
-                      onBlur={() => {
-                        if (birthDay) patchForm({ birthDay: pad2(birthDay) })
-                      }}
-                    />
-                    <span className="date-input-unit">일</span>
-                  </label>
-                </div>
-              </fieldset>
-
-              <div className="field-row">
-                <label className="field" htmlFor="birthTime">
-                  <span className="field-label">태어난 시간</span>
-                  <input
-                    id="birthTime"
-                    ref={birthTimeRef}
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="14:30"
-                    maxLength={5}
-                    value={birthTime}
-                    disabled={timeUnknown}
-                    onChange={handleBirthTimeChange}
-                    onBlur={() => {
-                      if (!birthTime || birthTime.includes(':')) return
-                      if (birthTime.length <= 2) {
-                        patchForm({ birthTime: `${pad2(birthTime)}:00` })
-                      }
-                    }}
-                  />
-                  <span className="field-hint">24시간 · 예) 0930 → 09:30</span>
-                </label>
-                <label className="check-field" htmlFor="timeUnknown">
-                  <input
-                    id="timeUnknown"
-                    type="checkbox"
-                    checked={timeUnknown}
-                    onChange={handleTimeUnknownChange}
-                  />
-                  <span>출생시간을 모르겠어요</span>
-                </label>
-              </div>
-            </section>
-
-            <section className="field-group" aria-labelledby="section-gender">
-              <h2 id="section-gender">
-                <span className="section-num">參</span> 성별
-              </h2>
-              <fieldset className="field">
-                <legend className="field-label visually-hidden">성별 선택</legend>
-                <div className="segmented" role="group" aria-label="성별">
-                  <label className={gender === 'male' ? 'is-active' : ''}>
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="male"
-                      checked={gender === 'male'}
-                      onChange={() => patchForm({ gender: 'male' })}
-                    />
-                    남성
-                  </label>
-                  <label className={gender === 'female' ? 'is-active' : ''}>
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="female"
-                      checked={gender === 'female'}
-                      onChange={() => patchForm({ gender: 'female' })}
-                    />
-                    여성
-                  </label>
-                </div>
-              </fieldset>
-            </section>
-
-            {missingHint ? (
-              <p className="submit-hint" aria-live="polite">
-                {missingHint}
-              </p>
-            ) : null}
-
-            <button
-              className={`submit-btn${isLoading ? ' is-loading' : ''}`}
-              type="submit"
-              disabled={!canSubmit}
-            >
-              {isLoading ? (
-                <>
-                  <span className="spinner" aria-hidden="true" />
-                  <span className="submit-shimmer" aria-hidden="true" />
-                  풀어보는 중…
-                </>
-              ) : (
-                <>
-                  <span className="submit-icon" aria-hidden="true">
-                    ✦
-                  </span>
-                  {isRecalling ? '다시 쉽게 풀어보기' : '한눈에 풀어보기'}
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-
-        {isLoading ? <AnalysisLoading /> : null}
-
-        {errorMessage ? (
+        {app.errorMessage ? (
           <div className="status status--error" role="alert">
-            <p>{errorMessage}</p>
+            <p>{app.errorMessage}</p>
             <button
               type="button"
               className="status-retry"
-              onClick={() => {
-                setErrorMessage('')
-                formCardRef.current
-                  ?.querySelector('form')
-                  ?.requestSubmit()
-              }}
+              onClick={app.handleRetry}
             >
               다시 시도
             </button>
           </div>
         ) : null}
 
-        {statusMessage ? (
+        {app.statusMessage ? (
           <p className="status status--ok" role="status">
-            {statusMessage}
+            {app.statusMessage}
           </p>
         ) : null}
 
-        {interpretation ? (
-          <div ref={resultRef}>
-            <ResultPanel
-              interpretation={interpretation}
-              name={name}
-              onStatus={showStatus}
-            />
+        {app.interpretation ? (
+          <div ref={app.resultRef}>
+            <div className="result-ready" role="status">
+              <Mascot size="sm" />
+              <div className="result-ready-copy">
+                <p className="result-ready-kicker">첨벙</p>
+                <p className="result-ready-title">물개가 다 읽어 봤어요</p>
+              </div>
+            </div>
+            {app.user ? (
+              <ResultPanel
+                interpretation={app.interpretation}
+                name={app.form.name}
+                onStatus={app.showStatus}
+              />
+            ) : (
+              <GuestResultGate
+                authBusy={app.authBusy}
+                onGoogleSignIn={app.handleGoogleSignIn}
+                onReset={app.handleGuestReset}
+              />
+            )}
           </div>
         ) : null}
       </div>

@@ -1,42 +1,49 @@
 import { useEffect, useState } from 'react'
 
-const STEPS = [
-  '생년월일을 확인하고 있어요',
-  '성향의 흐름을 정리하고 있어요',
-  '읽기 쉽게 결과를 다듬고 있어요',
-]
-
-/** 실제 단계가 아니라 대기 중 안내용 — 완료 체크는 시간 경과만 반영 */
+/** 대기 화면 — 일러스트 + 진행률(가짜지만 체감용으로 천천히 상승) */
 export function AnalysisLoading() {
-  const [step, setStep] = useState(0)
+  const [pct, setPct] = useState(6)
 
   useEffect(() => {
-    const timers = [
-      window.setTimeout(() => setStep(1), 900),
-      window.setTimeout(() => setStep(2), 2200),
-    ]
-    return () => timers.forEach((id) => window.clearTimeout(id))
+    const started = performance.now()
+    let raf = 0
+    const tick = (now) => {
+      const t = (now - started) / 1000
+      // 초반 빠르게, 후반 94% 근처에서 감속
+      const next = Math.min(94, 6 + 88 * (1 - Math.exp(-t / 4.2)))
+      setPct(Math.round(next))
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   return (
-    <div className="analysis-loading" role="status" aria-live="polite">
-      <p className="analysis-loading-title">사주를 풀어보고 있어요</p>
-      <ul className="analysis-loading-steps">
-        {STEPS.map((label, i) => {
-          const done = i < step
-          const current = i === step
-          return (
-            <li
-              key={label}
-              className={`analysis-loading-step${done ? ' is-done' : ''}${current ? ' is-current' : ''}`}
-            >
-              <span aria-hidden="true">{done ? '✓' : current ? '…' : '·'}</span>
-              {label}
-            </li>
-          )
-        })}
-      </ul>
-      <p className="analysis-loading-note">잠시만 기다려 주세요</p>
+    <div className="analysis-loading" aria-busy="true">
+      <div className="analysis-loading-frame" aria-hidden="true">
+        <img
+          className="analysis-loading-art"
+          src="/loading-mascot.png"
+          alt=""
+          width={720}
+          height={900}
+          decoding="async"
+        />
+      </div>
+      <div
+        className="analysis-loading-progress"
+        role="progressbar"
+        aria-label="사주 해석 진행"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+      >
+        <div className="analysis-loading-bar" aria-hidden="true">
+          <span style={{ width: `${pct}%` }} />
+        </div>
+        <p className="analysis-loading-pct">{pct}%</p>
+      </div>
+      <p className="analysis-loading-label">물개가 사주 읽는 중…</p>
     </div>
   )
 }

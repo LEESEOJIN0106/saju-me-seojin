@@ -1,0 +1,92 @@
+:root {
+  /* Seal mascot — soft ice / blush palette */
+  --ice: #d9ecff;
+  --ice-deep: #7eb6e8;
+  --sky: #a8d4f5;
+  --sky-deep: #5b9fd4;
+  --blush: #ffc2d1;
+  --blush-deep: #f08aa3;
+  --cream: #fff8f4;
+  --snow: #ffffff;
+  --fog: #f3f6fa;
+
+  /* Semantic */
+  --primary: var(--sky-deep);
+  --primary-dark: #3f7fb0;
+  --primary-light: #eaf5fc;
+  --primary-mid: var(--sky);
+
+  --accent: var(--blush-deep);
+  --accent-bright: #ffd0db;
+  --accent-deep: #e06b88;
+  --accent-soft: rgba(240, 138, 163, 0.16);
+  --accent-glow: rgba(126, 182, 232, 0.22);
+
+  --bg: #f5f8fc;
+  --surface: var(--snow);
+  --surface-2: var(--fog);
+
+  --ink: #2a3340;
+  --ink-soft: #6b7787;
+  --ink-faint: #a0abb8;
+
+  --gold: #f0d2a8;
+  --gold-light: var(--cream);
+
+  --line: #e2eaf2;
+  --line-soft: rgba(42, 51, 64, 0.06);
+
+  /* aliases */
+  --paper: var(--bg);
+  --paper-deep: var(--surface-2);
+  --navy: var(--primary-dark);
+  --navy-soft: var(--primary);
+  --mystic: var(--primary);
+  --mystic-soft: rgba(91, 159, 212, 0.12);
+  --surface-solid: var(--surface);
+  --green: var(--sky);
+  --green-deep: var(--sky-deep);
+  --mint: var(--ice);
+  --peach: var(--cream);
+  --pink: var(--blush);
+  --blue: var(--sky-deep);
+  --blue-deep: var(--primary-dark);
+  --blue-soft: var(--primary-light);
+
+  --shadow: 0 1px 2px rgba(42, 51, 64, 0.04);
+  --shadow-lift: 0 12px 30px rgba(91, 159, 212, 0.12);
+  --shadow-glow: 0 0 0 transparent;
+
+  --radius: 20px;
+  --radius-sm: 14px;
+  --radius-xs: 10px;
+  --radius-lg: 24px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  --el-wood: #6aae7a;
+  --el-fire: var(--blush-deep);
+  --el-earth: #d4a574;
+  --el-metal: #8a93a0;
+  --el-water: var(--sky-deep);
+
+  /* Noonnu: Cafe24 Surround (cute display) + Paperlogy (UI body) */
+  --font-display: 'Cafe24Surround', 'Paperlogy', sans-serif;
+  --font-body: 'Paperlogy', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+
+  font-family: var(--font-body);
+  line-height: 1.65;
+  font-size: 15px;
+  color: var(--ink);
+  background-color: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
